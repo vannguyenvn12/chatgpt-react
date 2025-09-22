@@ -17,6 +17,11 @@ import {
   IconButton,
   LinearProgress,
   Link,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -45,6 +50,15 @@ export default function Form() {
   const [uploadError, setUploadError] = useState(null);
   const [latestChatGPTMessage, setLatestChatGPTMessage] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isWaitingForChatGPT, setIsWaitingForChatGPT] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [waitingTime, setWaitingTime] = useState(0);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportSuccess, setExportSuccess] = useState(false);
+  const [exportedDocUrl, setExportedDocUrl] = useState(null);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [isChatGPTStreaming, setIsChatGPTStreaming] = useState(false);
+  const [isChatGPTComplete, setIsChatGPTComplete] = useState(false);
 
   const connectionChip = (
     <Chip
@@ -82,7 +96,45 @@ export default function Form() {
 
     const handleChatGPTMessage = (payload) => {
       console.log('Received ChatGPT message:', payload);
-      setLatestChatGPTMessage(payload);
+
+      // Kiểm tra nếu là message từ ChatGPT (không phải user)
+      if (payload.author === 'chatgpt' || payload.role === 'chatgpt') {
+        setLatestChatGPTMessage(payload);
+        setIsWaitingForChatGPT(false); // Stop loading when ChatGPT responds
+
+        // Kiểm tra nếu message có dấu hiệu streaming
+        const isStreaming = payload.text && (
+          payload.text.includes('...') ||
+          payload.text.endsWith('...') ||
+          payload.isStreaming === true ||
+          payload.streaming === true
+        );
+
+        if (isStreaming) {
+          setIsChatGPTStreaming(true);
+          setIsChatGPTComplete(false);
+        } else {
+          // Message hoàn chỉnh
+          setIsChatGPTStreaming(false);
+          setIsChatGPTComplete(true);
+        }
+
+        // Reset form after receiving complete ChatGPT response
+        if (!isStreaming) {
+          setTimeout(() => {
+            setFormData({
+              fileAttachment: null,
+              question: 'CN2: Xây dựng bộ câu hỏi mới',
+              caseNumber: '2025F31234',
+              interviewDate: new Date(2024, 2, 7), // 7/3/2024
+              companion: 'Không có',
+              notes: 'Không có',
+            });
+            setIsSubmitting(false);
+            setUploadError(null);
+          }, 2000); // Wait 2 seconds before resetting
+        }
+      }
     };
 
     socket.on('send_chat_to_react', handleChatGPTMessage);
@@ -91,6 +143,45 @@ export default function Form() {
       socket.off('send_chat_to_react', handleChatGPTMessage);
     };
   }, [socket]);
+
+  // Timer for waiting time display
+  useEffect(() => {
+    let timer;
+    if (isWaitingForChatGPT) {
+      timer = setInterval(() => {
+        setWaitingTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      setWaitingTime(0);
+    }
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isWaitingForChatGPT]);
+
+  // Timeout for ChatGPT response
+  useEffect(() => {
+    let timeout;
+    if (isWaitingForChatGPT) {
+      timeout = setTimeout(() => {
+        setIsWaitingForChatGPT(false);
+        setUploadError('Timeout: Không nhận được phản hồi từ ChatGPT trong 60 giây');
+      }, 60000);
+    }
+
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [isWaitingForChatGPT]);
+
+  // Reset streaming states when starting new conversation
+  useEffect(() => {
+    if (isWaitingForChatGPT) {
+      setIsChatGPTStreaming(false);
+      setIsChatGPTComplete(false);
+    }
+  }, [isWaitingForChatGPT]);
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
@@ -120,18 +211,46 @@ export default function Form() {
     });
   };
 
+  const handleCloseExportModal = () => {
+    setExportModalOpen(false);
+    setExportSuccess(false);
+    setExportedDocUrl(null);
+    setExportProgress(0);
+  };
+
   const handleExportToGoogle = async () => {
     if (!latestChatGPTMessage) {
       alert('Chưa có dữ liệu từ ChatGPT để xuất!');
       return;
     }
 
+    // Mở modal và bắt đầu export
+    setExportModalOpen(true);
+    setExportSuccess(false);
+    setExportedDocUrl(null);
+    setExportProgress(0);
     setIsExporting(true);
+
+    // Fake progress: chạy đến 90%
+    const progressInterval = setInterval(() => {
+      setExportProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return 90;
+        }
+        return prev + Math.random() * 15 + 5; // Tăng 5-20% mỗi lần
+      });
+    }, 200);
+
     try {
       const response = await postText(
         'https://script.google.com/macros/s/AKfycbyS3h4Ci958a33mz2tWopo02R1jwQvZaUQrezmT6AzsaqkCc0NkLm4CxPJU_o2lklZo/exec',
         latestChatGPTMessage.text
       );
+
+      // Dừng fake progress và set 100% khi thành công
+      clearInterval(progressInterval);
+      setExportProgress(100);
 
       if (response.ok) {
         const responseData = await response.text();
@@ -143,21 +262,24 @@ export default function Form() {
               ...prev,
               googleDocUrl: parsedData.googleDocUrl,
             }));
-            alert('Xuất file thành công! Google Doc đã được tạo.');
+            setExportedDocUrl(parsedData.googleDocUrl);
+            setExportSuccess(true);
           } else {
-            alert('Xuất file thành công!');
+            setExportSuccess(true);
           }
         } catch (parseError) {
           // Nếu không parse được JSON, coi như thành công
           console.log('Response is not JSON, treating as success:', parseError);
-          alert('Xuất file thành công!');
+          setExportSuccess(true);
         }
       } else {
         throw new Error(`Export failed: ${response.statusText}`);
       }
     } catch (error) {
       console.error('Export error:', error);
-      alert('Lỗi xuất file: ' + error.message);
+      clearInterval(progressInterval);
+      setUploadError('Lỗi xuất file: ' + error.message);
+      setExportSuccess(false);
     } finally {
       setIsExporting(false);
     }
@@ -204,10 +326,23 @@ export default function Form() {
         // Upload file nếu có
         if (formData.fileAttachment) {
           setIsUploading(true);
+          setUploadProgress(0);
           try {
+            // Simulate progress for better UX
+            const progressInterval = setInterval(() => {
+              setUploadProgress(prev => {
+                if (prev >= 90) return prev;
+                return prev + Math.random() * 20;
+              });
+            }, 200);
+
             const uploadResult = await uploadToCloudinary([
               formData.fileAttachment,
             ]);
+
+            clearInterval(progressInterval);
+            setUploadProgress(100);
+
             // Sử dụng content thay vì secure_url
             fileUrl =
               uploadResult.content ||
@@ -219,9 +354,11 @@ export default function Form() {
             setUploadError('Lỗi upload file: ' + uploadErr.message);
             setIsSubmitting(false);
             setIsUploading(false);
+            setUploadProgress(0);
             return;
           } finally {
             setIsUploading(false);
+            setUploadProgress(0);
           }
         }
 
@@ -248,19 +385,8 @@ XUẤT TRỰC TIẾP PACKAGE`;
 
         socket.emit('send_message_to_server', payload);
 
-        // Reset form sau khi gửi
-        setTimeout(() => {
-          setFormData({
-            fileAttachment: null,
-            question: 'CN2: Xây dựng bộ câu hỏi mới',
-            caseNumber: '2025F31234',
-            interviewDate: new Date(2024, 2, 7), // 7/3/2024
-            companion: 'Không có',
-            notes: 'Không có',
-          });
-          setIsSubmitting(false);
-          setUploadError(null);
-        }, 1000);
+        // Bắt đầu chờ phản hồi từ ChatGPT
+        setIsWaitingForChatGPT(true);
       } catch (error) {
         console.error('Submit error:', error);
         setUploadError('Lỗi gửi form: ' + error.message);
@@ -303,13 +429,25 @@ XUẤT TRỰC TIẾP PACKAGE`;
               </Typography>
               {isUploading && (
                 <Box sx={{ mb: 2 }}>
-                  <LinearProgress />
+                  <LinearProgress
+                    variant="determinate"
+                    value={uploadProgress}
+                    sx={{
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: 'grey.200',
+                      '& .MuiLinearProgress-bar': {
+                        borderRadius: 4,
+                        backgroundColor: 'primary.main'
+                      }
+                    }}
+                  />
                   <Typography
                     variant='caption'
                     color='text.secondary'
                     sx={{ mt: 1, display: 'block' }}
                   >
-                    Đang upload file...
+                    Đang upload file... {Math.round(uploadProgress)}%
                   </Typography>
                 </Box>
               )}
@@ -537,6 +675,44 @@ XUẤT TRỰC TIẾP PACKAGE`;
             </Typography>
           )}
 
+          {/* ChatGPT Loading State */}
+          {isWaitingForChatGPT && (
+            <Paper
+              elevation={1}
+              sx={{
+                p: 3,
+                mb: 2,
+                bgcolor: 'info.50',
+                border: '1px solid',
+                borderColor: 'info.200',
+                borderRadius: 2,
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <CircularProgress
+                  size={24}
+                  sx={{ color: 'info.main' }}
+                />
+                <Box sx={{ width: '100%' }}>
+                  <Typography
+                    variant='subtitle2'
+                    color='info.dark'
+                    sx={{ mb: 1, fontWeight: 600 }}
+                  >
+                    Đang chờ phản hồi từ AI...
+                  </Typography>
+                  <Typography
+                    variant='caption'
+                    color='text.secondary'
+                    sx={{ display: 'block' }}
+                  >
+                    Vui lòng đợi trong giây lát... ({waitingTime}s)
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
+          )}
+
           {/* ChatGPT Response Display */}
           {latestChatGPTMessage && (
             <Paper
@@ -544,25 +720,40 @@ XUẤT TRỰC TIẾP PACKAGE`;
               sx={{
                 p: 2,
                 mb: 2,
-                bgcolor: 'success.50',
+                bgcolor: isChatGPTStreaming ? 'info.50' : 'success.50',
                 border: '1px solid',
-                borderColor: 'success.200',
+                borderColor: isChatGPTStreaming ? 'info.200' : 'success.200',
                 borderRadius: 2,
               }}
             >
-              <Typography
-                variant='subtitle2'
-                color='success.dark'
-                sx={{ mb: 1, fontWeight: 600 }}
-              >
-                Phản hồi từ ChatGPT:
-              </Typography>
-              <Typography variant='body2' sx={{ mb: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Typography
+                  variant='subtitle2'
+                  color={isChatGPTStreaming ? 'info.dark' : 'success.dark'}
+                  sx={{ fontWeight: 600 }}
+                >
+                  Phản hồi từ AI:
+                </Typography>
+                {isChatGPTStreaming && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <CircularProgress size={16} sx={{ color: 'info.main' }} />
+                    <Typography variant='caption' color='info.main' sx={{ fontWeight: 500 }}>
+                      Đang gõ...
+                    </Typography>
+                  </Box>
+                )}
+                {isChatGPTComplete && !isChatGPTStreaming && (
+                  <Typography variant='caption' color='success.main' sx={{ fontWeight: 500 }}>
+                    ✓ Hoàn thành
+                  </Typography>
+                )}
+              </Box>
+              {/* <Typography variant='body2' sx={{ mb: 1 }}>
                 {latestChatGPTMessage.text}
-              </Typography>
+              </Typography> */}
 
               {/* Google Doc Link */}
-              {latestChatGPTMessage.googleDocUrl && (
+              {/* {latestChatGPTMessage.googleDocUrl && (
                 <Box
                   sx={{ mt: 2, p: 1, bgcolor: 'primary.50', borderRadius: 1 }}
                 >
@@ -590,7 +781,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     Xem tại đây trên màn hình
                   </Link>
                 </Box>
-              )}
+              )} */}
 
               <Typography
                 variant='caption'
@@ -608,29 +799,162 @@ XUẤT TRỰC TIẾP PACKAGE`;
               variant='contained'
               size='large'
               onClick={handleSubmit}
-              disabled={!connected || isSubmitting || isUploading}
+              disabled={!connected || isSubmitting || isUploading || isWaitingForChatGPT}
+              startIcon={
+                isUploading || isSubmitting || isWaitingForChatGPT ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : null
+              }
               sx={{ py: 1.5, flex: 1 }}
             >
               {isUploading
                 ? 'Đang upload file...'
                 : isSubmitting
-                ? 'Đang gửi...'
-                : 'XUẤT TRỰC TIẾP PACKAGE'}
+                  ? 'Đang gửi...'
+                  : isWaitingForChatGPT
+                    ? 'Đang chờ ChatGPT...'
+                    : 'XUẤT TRỰC TIẾP PACKAGE'}
             </Button>
 
             <Button
               variant='outlined'
               size='large'
               onClick={handleExportToGoogle}
-              disabled={!latestChatGPTMessage || isExporting}
+              disabled={!latestChatGPTMessage || isExporting || isChatGPTStreaming || !isChatGPTComplete}
               startIcon={<FileDownload />}
               sx={{ py: 1.5, minWidth: 140 }}
             >
-              {isExporting ? 'Đang xuất...' : 'Xuất File'}
+              {isExporting
+                ? 'Đang xuất...'
+                : isChatGPTStreaming
+                  ? 'Đang chờ ChatGPT...'
+                  : 'Xuất File'
+              }
             </Button>
           </Box>
         </Box>
       </CardActions>
+
+      {/* Export Modal */}
+      <Dialog
+        open={exportModalOpen}
+        onClose={() => { }} // Tắt chức năng đóng khi click bên ngoài
+        maxWidth="sm"
+        fullWidth
+        disableEscapeKeyDown // Tắt chức năng đóng bằng phím Escape
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: '0 10px 40px rgba(0,0,0,0.35)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          {exportSuccess ? 'Xuất file thành công!' : 'Đang xuất file...'}
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          {!exportSuccess ? (
+            // Loading state
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 3 }}>
+              <Box sx={{ width: '100%', mb: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Đang tạo Google Doc...
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                    {Math.round(exportProgress)}%
+                  </Typography>
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={exportProgress}
+                  sx={{
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: 'grey.200',
+                    '& .MuiLinearProgress-bar': {
+                      borderRadius: 4,
+                      backgroundColor: exportProgress >= 100 ? 'success.main' : 'primary.main'
+                    }
+                  }}
+                />
+              </Box>
+
+              <Typography variant="h6" color="text.primary" sx={{ mb: 1 }}>
+                {exportProgress < 90 ? 'Đang xử lý dữ liệu...' : 'Đang tạo tài liệu...'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" textAlign="center">
+                {exportProgress < 90
+                  ? 'Vui lòng đợi trong giây lát, chúng tôi đang xử lý dữ liệu của bạn.'
+                  : 'Đang tạo Google Doc, vui lòng đợi thêm chút nữa...'
+                }
+              </Typography>
+            </Box>
+          ) : (
+            // Success state
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2 }}>
+              <Box
+                sx={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: '50%',
+                  bgcolor: 'success.100',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mb: 2,
+                }}
+              >
+                <FileDownload sx={{ fontSize: 32, color: 'success.main' }} />
+              </Box>
+
+              <Typography variant="h6" color="success.dark" sx={{ mb: 2, textAlign: 'center' }}>
+                Google Doc đã được tạo thành công!
+              </Typography>
+
+              {exportedDocUrl ? (
+                <Box sx={{ width: '100%', textAlign: 'center' }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    href={exportedDocUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{
+                      py: 1.5,
+                      px: 4,
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                    }}
+                  >
+                    📄 Mở Google Doc
+                  </Button>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
+                    Click vào nút trên để mở Google Doc trong tab mới
+                  </Typography>
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary" textAlign="center">
+                  File đã được xuất thành công!
+                </Typography>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 1 }}>
+          <Button
+            onClick={handleCloseExportModal}
+            variant="outlined"
+            size="large"
+            sx={{ minWidth: 120 }}
+          >
+            {exportSuccess ? 'Đóng' : 'Hủy'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 }

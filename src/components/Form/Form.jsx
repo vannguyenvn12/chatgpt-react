@@ -22,6 +22,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Alert,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -32,7 +33,7 @@ import { useSocketContext } from '../../context/SocketProvider';
 import { uploadToCloudinary } from '../../api/upload';
 
 export default function Form() {
-  const { socket, connected } = useSocketContext();
+  const { socket, connected, connecting, socketError, isWaiting, waitingMessage, connectSocket, disconnectSocket } = useSocketContext();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -61,11 +62,53 @@ export default function Form() {
   const [isChatGPTComplete, setIsChatGPTComplete] = useState(false);
 
   const connectionChip = (
-    <Chip
-      label={connected ? 'Connected' : 'Disconnected'}
-      color={connected ? 'success' : 'default'}
-      size='small'
-    />
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Chip
+        label={
+          connecting
+            ? '🔄 Đang kết nối...'
+            : connected
+              ? '✅ Đã kết nối'
+              : isWaiting
+                ? '⏳ Đang chờ...'
+                : '❌ Chưa kết nối'
+        }
+        color={
+          connecting
+            ? 'warning'
+            : connected
+              ? 'success'
+              : isWaiting
+                ? 'warning'
+                : 'default'
+        }
+        size='small'
+        sx={{ fontWeight: 'bold' }}
+      />
+      {!connected && !isWaiting && (
+        <Button
+          variant="contained"
+          size="small"
+          onClick={connectSocket}
+          disabled={connecting}
+          startIcon={connecting ? <CircularProgress size={16} /> : null}
+          sx={{ fontWeight: 'bold' }}
+        >
+          {connecting ? '🔄 Đang kết nối...' : '🔌 Kết nối'}
+        </Button>
+      )}
+      {connected && (
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={disconnectSocket}
+          color="warning"
+          sx={{ fontWeight: 'bold' }}
+        >
+          🔌 Ngắt kết nối
+        </Button>
+      )}
+    </Box>
   );
 
   const handleInputChange = (field) => (event) => {
@@ -313,7 +356,7 @@ export default function Form() {
       event.preventDefault();
 
       if (!connected) {
-        alert('Không có kết nối đến server');
+        alert('Bạn cần kết nối trước khi sử dụng hệ thống');
         return;
       }
 
@@ -398,362 +441,530 @@ XUẤT TRỰC TIẾP PACKAGE`;
   );
 
   return (
-    <Card
-      variant='outlined'
-      sx={{
-        flex: 1,
-        mx: 'auto',
-        maxWidth: 800,
-        borderColor: 'divider',
-        boxShadow: '0 10px 40px rgba(0,0,0,0.35)',
-        backdropFilter: 'saturate(110%) blur(10px)',
-      }}
-    >
-      <CardHeader
-        title='Form Phỏng Vấn'
-        action={connectionChip}
-        sx={{ pb: 0.5 }}
-      />
-
-      <CardContent sx={{ pt: 2 }}>
-        <Box component='form' onSubmit={handleSubmit}>
-          <Typography variant='h6' gutterBottom>
-            Thông tin phỏng vấn
-          </Typography>
-
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
-            {/* File đính kèm - Upload */}
-            <Box>
-              <Typography variant='subtitle2' gutterBottom>
-                File đính kèm
-              </Typography>
-              {isUploading && (
-                <Box sx={{ mb: 2 }}>
-                  <LinearProgress
-                    variant="determinate"
-                    value={uploadProgress}
-                    sx={{
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: 'grey.200',
-                      '& .MuiLinearProgress-bar': {
-                        borderRadius: 4,
-                        backgroundColor: 'primary.main'
-                      }
-                    }}
-                  />
-                  <Typography
-                    variant='caption'
-                    color='text.secondary'
-                    sx={{ mt: 1, display: 'block' }}
-                  >
-                    Đang upload file... {Math.round(uploadProgress)}%
+    <Box sx={{
+      display: 'flex',
+      gap: { xs: 2, lg: 3 },
+      maxWidth: 1200,
+      mx: 'auto',
+      flexDirection: { xs: 'column', lg: 'row' },
+      px: { xs: 2, sm: 3, lg: 0 }
+    }}>
+      {/* Hướng dẫn sử dụng - Sidebar */}
+      {(
+        <Box sx={{
+          flex: { xs: 'none', lg: '0 0 300px' },
+          order: { xs: 2, lg: 1 },
+          display: { xs: 'block', lg: 'block' }
+        }}>
+          <Card
+            variant='outlined'
+            sx={{
+              position: { xs: 'static', lg: 'sticky' },
+              top: { xs: 'auto', lg: 20 },
+              borderColor: 'divider',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.35)',
+              backdropFilter: 'saturate(110%) blur(10px)',
+              bgcolor: 'grey.900',
+              border: '1px solid',
+              borderColor: 'grey.700',
+              mb: { xs: 2, lg: 0 }
+            }}
+          >
+            <CardHeader
+              title={!connected ? "📖 Hướng dẫn sử dụng" : "💡 Mẹo sử dụng"}
+              sx={{ pb: 1 }}
+            />
+            <CardContent sx={{ pt: 0 }}>
+              {!connected ? (
+                <Box component="ul" sx={{ pl: 2, m: 0 }}>
+                  <Typography component="li" variant="body2" sx={{ mb: 2, color: 'text.primary' }}>
+                    <strong>Bước 1:</strong> Nhấn nút "Kết nối" ở góc phải trên để kết nối với hệ thống
+                  </Typography>
+                  <Typography component="li" variant="body2" sx={{ mb: 2, color: 'text.primary' }}>
+                    <strong>Bước 2:</strong> Điền đầy đủ thông tin phỏng vấn (có thể tải lên file PDF)
+                  </Typography>
+                  <Typography component="li" variant="body2" sx={{ mb: 2, color: 'text.primary' }}>
+                    <strong>Bước 3:</strong> Nhấn "Gửi câu hỏi cho AI" để nhận phản hồi
+                  </Typography>
+                  <Typography component="li" variant="body2" sx={{ mb: 2, color: 'text.primary' }}>
+                    <strong>Bước 4:</strong> Chờ AI trả lời
+                  </Typography>
+                  <Typography component="li" variant="body2" sx={{ mb: 2, color: 'text.primary' }}>
+                    <strong>Bước 5:</strong> Nhấn "Xuất File" để xuất file
+                  </Typography>
+                  <Typography component="li" variant="body2" sx={{ mb: 2, color: 'text.primary' }}>
+                    <strong>Bước 5:</strong> Ngắt kết nối sau khi dùng xong
+                  </Typography>
+                </Box>
+              ) : (
+                <Box sx={{ pl: 0, m: 0 }}>
+                  <Typography variant="body2" sx={{ mb: 2, color: 'text.primary' }}>
+                    ✅ <strong>Đã kết nối:</strong> Bạn có thể bắt đầu sử dụng hệ thống
+                  </Typography>
+                  <Typography variant="body2" sx={{ mb: 2, color: 'text.primary' }}>
+                    📝 <strong>Điền form:</strong> Thông tin càng chi tiết, AI trả lời càng chính xác
+                  </Typography>
+                  <Typography variant="body2" sx={{ mb: 2, color: 'text.primary' }}>
+                    📎 <strong>Upload file:</strong> Hỗ trợ PDF (tối đa 10MB)
+                  </Typography>
+                  <Typography variant="body2" sx={{ mb: 2, color: 'text.primary' }}>
+                    🤖 <strong>Gửi câu hỏi:</strong> Nhấn nút xanh để gửi câu hỏi cho AI
                   </Typography>
                 </Box>
               )}
-              {formData.fileAttachment ? (
-                <Paper
-                  elevation={2}
-                  sx={{
-                    p: 3,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    bgcolor: 'success.50',
-                    border: '1px solid',
-                    borderColor: 'success.200',
-                    borderRadius: 2,
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      elevation: 4,
-                      transform: 'translateY(-2px)',
-                    },
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Box
-                      sx={{
-                        p: 1.5,
-                        borderRadius: '50%',
-                        bgcolor: 'success.100',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <CloudUpload color='success' sx={{ fontSize: 24 }} />
-                    </Box>
-                    <Box>
-                      <Typography
-                        variant='subtitle2'
-                        color='success.dark'
-                        sx={{ fontWeight: 600 }}
-                      >
-                        {formData.fileAttachment.name}
-                      </Typography>
-                      <Typography variant='caption' color='text.secondary'>
-                        {(formData.fileAttachment.size / 1024).toFixed(1)} KB
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <IconButton
-                    size='small'
-                    onClick={handleFileRemove}
-                    color='error'
-                    sx={{
-                      bgcolor: 'error.50',
-                      '&:hover': {
-                        bgcolor: 'error.100',
-                      },
-                    }}
+              {/* <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
+                💡 <strong>Lưu ý:</strong> Hệ thống chỉ cho phép 1 người sử dụng tại 1 thời điểm.
+              </Typography> */}
+            </CardContent>
+          </Card>
+        </Box>
+      )}
+
+      {/* Form chính */}
+      <Box sx={{
+        flex: 1,
+        order: { xs: 1, lg: 2 }
+      }}>
+        <Card
+          variant='outlined'
+          sx={{
+            borderColor: 'divider',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.35)',
+            backdropFilter: 'saturate(110%) blur(10px)',
+          }}
+        >
+          <CardHeader
+            title='Hệ Thống Phỏng Vấn AI'
+            subheader='Điền thông tin và gửi câu hỏi để nhận phản hồi từ AI'
+            action={connectionChip}
+            sx={{ pb: 0.5 }}
+          />
+
+          {/* Socket Status Banner */}
+          {isWaiting && (
+            <Box sx={{ px: 2, pb: 2 }}>
+              <Alert
+                severity="warning"
+                sx={{ mb: 2 }}
+                icon={<CircularProgress size={20} />}
+              >
+                <Typography variant="body2" fontWeight="bold">
+                  🔒 Hệ thống đang được sử dụng
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  Có người khác đang sử dụng hệ thống. Vui lòng chờ đợi...
+                </Typography>
+                <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'text.secondary' }}>
+                  💡 Mẹo: Hãy thử lại sau vài phút hoặc liên hệ quản trị viên
+                </Typography>
+              </Alert>
+            </Box>
+          )}
+
+          {socketError && (
+            <Box sx={{ px: 2, pb: 2 }}>
+              <Alert
+                severity="error"
+                sx={{ mb: 2 }}
+                action={
+                  <Button
+                    color="inherit"
+                    size="small"
+                    onClick={() => window.location.reload()}
                   >
-                    <Delete sx={{ fontSize: 20 }} />
-                  </IconButton>
-                </Paper>
-              ) : (
-                <Paper
-                  elevation={isDragOver ? 8 : 1}
-                  sx={{
-                    p: 4,
-                    textAlign: 'center',
-                    border: '2px dashed',
-                    borderColor: isDragOver ? 'primary.main' : 'grey.300',
-                    bgcolor: isDragOver ? 'primary.50' : 'grey.50',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    transform: isDragOver ? 'scale(1.02)' : 'scale(1)',
-                    '&:hover': {
-                      borderColor: 'primary.main',
-                      bgcolor: 'primary.50',
-                      transform: 'scale(1.01)',
-                    },
-                  }}
-                  onClick={() => document.getElementById('file-upload').click()}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: 2,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        p: 2,
-                        borderRadius: '50%',
-                        bgcolor: isDragOver ? 'primary.100' : 'grey.100',
-                        transition: 'all 0.3s ease',
-                      }}
-                    >
-                      <CloudUpload
+                    🔄 Thử lại
+                  </Button>
+                }
+              >
+                <Typography variant="body2" fontWeight="bold">
+                  ❌ Không thể kết nối
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  {socketError}
+                </Typography>
+                <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'text.secondary' }}>
+                  💡 Mẹo: Kiểm tra kết nối mạng và thử lại
+                </Typography>
+              </Alert>
+            </Box>
+          )}
+
+          {/* Welcome Banner */}
+          {/* {!connected && !isWaiting && !socketError && (
+            <Box sx={{ px: 2, pb: 2 }}>
+              <Alert
+                severity="info"
+                sx={{ mb: 2 }}
+              >
+                <Typography variant="body2" fontWeight="bold">
+                  👋 Chào mừng bạn đến với Hệ thống Phỏng vấn AI
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  📝 Để bắt đầu, hãy nhấn nút "Kết nối" ở góc phải trên
+                </Typography>
+                <Typography variant="caption" sx={{ mt: 1, display: 'block', color: 'text.secondary' }}>
+                  💡 Sau khi kết nối, bạn có thể điền form và gửi câu hỏi để nhận phản hồi từ AI
+                </Typography>
+              </Alert>
+            </Box>
+          )} */}
+
+          {/* Connected Banner */}
+          {connected && (
+            <Box sx={{ px: 2, pb: 2 }}>
+              <Alert
+                severity="success"
+                sx={{ mb: 2 }}
+              >
+                <Typography variant="body2" fontWeight="bold">
+                  ✅ Đã kết nối thành công
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  🚀 Bạn có thể bắt đầu sử dụng hệ thống. Điền thông tin bên dưới và nhấn "Gửi câu hỏi"
+                </Typography>
+              </Alert>
+            </Box>
+          )}
+
+          <CardContent sx={{ pt: 2 }}>
+            <Box component='form' onSubmit={handleSubmit}>
+              {/* <Typography variant='h6' gutterBottom>
+                📋 Thông tin phỏng vấn
+              </Typography>
+              <Typography variant='body2' color="text.secondary" sx={{ mb: 3 }}>
+                💡 Điền đầy đủ thông tin bên dưới để nhận phản hồi chính xác từ AI
+              </Typography> */}
+
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
+                {/* File đính kèm - Upload */}
+                <Box>
+                  <Typography variant='subtitle2' gutterBottom>
+                    📎 File đính kèm (PDF)
+                  </Typography>
+                  <Typography variant='caption' color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                    💡 Tải lên file PDF chứa thông tin liên quan đến câu hỏi phỏng vấn
+                  </Typography>
+                  {isUploading && (
+                    <Box sx={{ mb: 2 }}>
+                      <LinearProgress
+                        variant="determinate"
+                        value={uploadProgress}
                         sx={{
-                          fontSize: 40,
-                          color: isDragOver ? 'primary.main' : 'grey.400',
-                          transition: 'all 0.3s ease',
+                          height: 8,
+                          borderRadius: 4,
+                          backgroundColor: 'grey.200',
+                          '& .MuiLinearProgress-bar': {
+                            borderRadius: 4,
+                            backgroundColor: 'primary.main'
+                          }
                         }}
                       />
-                    </Box>
-                    <Box>
-                      <Typography
-                        variant='h6'
-                        color={isDragOver ? 'primary.main' : 'text.primary'}
-                        sx={{ mb: 1, fontWeight: 500 }}
-                      >
-                        {isDragOver ? 'Thả file vào đây' : 'Tải lên file'}
-                      </Typography>
-                      <Typography variant='body2' color='text.secondary'>
-                        Nhấn để chọn file hoặc kéo thả file vào đây
-                      </Typography>
                       <Typography
                         variant='caption'
                         color='text.secondary'
                         sx={{ mt: 1, display: 'block' }}
                       >
-                        Hỗ trợ: PDF, DOC, DOCX, TXT, JPG, PNG (Tối đa 10MB)
+                        Đang upload file... {Math.round(uploadProgress)}%
+                      </Typography>
+                    </Box>
+                  )}
+                  {formData.fileAttachment ? (
+                    <Paper
+                      elevation={2}
+                      sx={{
+                        p: 3,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        bgcolor: 'success.50',
+                        border: '1px solid',
+                        borderColor: 'success.200',
+                        borderRadius: 2,
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          elevation: 4,
+                          transform: 'translateY(-2px)',
+                        },
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Box
+                          sx={{
+                            p: 1.5,
+                            borderRadius: '50%',
+                            bgcolor: 'success.100',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <CloudUpload color='success' sx={{ fontSize: 24 }} />
+                        </Box>
+                        <Box>
+                          <Typography
+                            variant='subtitle2'
+                            color='success.dark'
+                            sx={{ fontWeight: 600 }}
+                          >
+                            {formData.fileAttachment.name}
+                          </Typography>
+                          <Typography variant='caption' color='text.secondary'>
+                            {(formData.fileAttachment.size / 1024).toFixed(1)} KB
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <IconButton
+                        size='small'
+                        onClick={handleFileRemove}
+                        color='error'
+                        sx={{
+                          bgcolor: 'error.50',
+                          '&:hover': {
+                            bgcolor: 'error.100',
+                          },
+                        }}
+                      >
+                        <Delete sx={{ fontSize: 20 }} />
+                      </IconButton>
+                    </Paper>
+                  ) : (
+                    <Paper
+                      elevation={isDragOver ? 8 : 1}
+                      sx={{
+                        p: 2,
+                        textAlign: 'center',
+                        border: '2px dashed',
+                        borderColor: isDragOver ? 'primary.main' : 'grey.600',
+                        bgcolor: isDragOver ? 'primary.900' : 'grey.900',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        transform: isDragOver ? 'scale(1.02)' : 'scale(1)',
+                        minHeight: 120,
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          bgcolor: 'primary.900',
+                          transform: 'scale(1.01)',
+                        },
+                      }}
+                      onClick={() => document.getElementById('file-upload').click()}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                    >
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: 1.5,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            p: 1.5,
+                            borderRadius: '50%',
+                            bgcolor: isDragOver ? 'primary.800' : 'grey.800',
+                            transition: 'all 0.3s ease',
+                          }}
+                        >
+                          <CloudUpload
+                            sx={{
+                              fontSize: 32,
+                              color: isDragOver ? 'primary.main' : 'grey.400',
+                              transition: 'all 0.3s ease',
+                            }}
+                          />
+                        </Box>
+                        <Box>
+                          <Typography
+                            variant='subtitle1'
+                            color={isDragOver ? 'primary.main' : 'text.primary'}
+                            sx={{ mb: 0.5, fontWeight: 500 }}
+                          >
+                            {isDragOver ? '📁 Thả file vào đây' : '📁 Tải lên file'}
+                          </Typography>
+                          <Typography variant='body2' color='text.secondary' sx={{ fontSize: '0.875rem' }}>
+                            Nhấn để chọn file hoặc kéo thả file vào đây
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <input
+                        id='file-upload'
+                        type='file'
+                        hidden
+                        onChange={handleFileUpload}
+                        accept='.pdf,.doc,.docx,.txt,.jpg,.jpeg,.png'
+                      />
+                    </Paper>
+                  )}
+                </Box>
+
+                {/* Câu hỏi - Dropdown */}
+                <FormControl fullWidth>
+                  <InputLabel>❓ Câu hỏi phỏng vấn</InputLabel>
+                  <Select
+                    value={formData.question}
+                    onChange={handleInputChange('question')}
+                    label='❓ Câu hỏi phỏng vấn'
+                  >
+                    <MenuItem value='CN2: Xây dựng bộ câu hỏi mới'>
+                      CN2: Xây dựng bộ câu hỏi mới
+                    </MenuItem>
+                    <MenuItem value='CN1: Phỏng vấn cơ bản'>
+                      Option 2 (chưa có)
+                    </MenuItem>
+                    <MenuItem value='CN3: Đánh giá năng lực'>
+                      Option 3 (chưa có)
+                    </MenuItem>
+                    <MenuItem value='CN4: Kiểm tra kỹ thuật'>
+                      Option 4 (chưa có)
+                    </MenuItem>
+                    <MenuItem value='Khác'>Khác</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {/* Case Number */}
+                <TextField
+                  fullWidth
+                  label='📋 Case Number'
+                  value={formData.caseNumber}
+                  onChange={handleInputChange('caseNumber')}
+                  placeholder='Nhập case number (VD: 2025F31234)'
+                />
+
+                {/* Ngày phỏng vấn */}
+                <LocalizationProvider
+                  dateAdapter={AdapterDateFns}
+                  adapterLocale={vi}
+                >
+                  <DatePicker
+                    label='📅 Ngày phỏng vấn'
+                    value={formData.interviewDate}
+                    onChange={handleDateChange}
+                    format='dd/MM/yyyy'
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        error: false,
+                      },
+                    }}
+                  />
+                </LocalizationProvider>
+
+                {/* Người đi cùng */}
+                <TextField
+                  fullWidth
+                  label='👥 Người đi cùng'
+                  value={formData.companion}
+                  onChange={handleInputChange('companion')}
+                  placeholder="Nhập tên người đi cùng hoặc 'Không có'"
+                />
+
+                {/* Ghi chú */}
+                <TextField
+                  fullWidth
+                  label='📝 Ghi chú bổ sung'
+                  value={formData.notes}
+                  onChange={handleInputChange('notes')}
+                  placeholder='Nhập ghi chú bổ sung (nếu có)'
+                  multiline
+                  rows={3}
+                />
+              </Box>
+            </Box>
+          </CardContent>
+
+          <CardActions sx={{ p: 2, pt: 0 }}>
+            <Box sx={{ width: '100%' }}>
+              {uploadError && (
+                <Typography
+                  variant='body2'
+                  color='error'
+                  sx={{ mb: 2, p: 1, bgcolor: 'error.50', borderRadius: 1 }}
+                >
+                  {uploadError}
+                </Typography>
+              )}
+
+              {/* ChatGPT Loading State */}
+              {isWaitingForChatGPT && (
+                <Paper
+                  elevation={1}
+                  sx={{
+                    p: 3,
+                    mb: 2,
+                    bgcolor: 'info.50',
+                    border: '1px solid',
+                    borderColor: 'info.200',
+                    borderRadius: 2,
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <CircularProgress
+                      size={24}
+                      sx={{ color: 'info.main' }}
+                    />
+                    <Box sx={{ width: '100%' }}>
+                      <Typography
+                        variant='subtitle2'
+                        color='info.dark'
+                        sx={{ mb: 1, fontWeight: 600 }}
+                      >
+                        Đang chờ phản hồi từ AI...
+                      </Typography>
+                      <Typography
+                        variant='caption'
+                        color='text.secondary'
+                        sx={{ display: 'block' }}
+                      >
+                        Vui lòng đợi trong giây lát... ({waitingTime}s)
                       </Typography>
                     </Box>
                   </Box>
-                  <input
-                    id='file-upload'
-                    type='file'
-                    hidden
-                    onChange={handleFileUpload}
-                    accept='.pdf,.doc,.docx,.txt,.jpg,.jpeg,.png'
-                  />
                 </Paper>
               )}
-            </Box>
 
-            {/* Câu hỏi - Dropdown */}
-            <FormControl fullWidth>
-              <InputLabel>Câu hỏi</InputLabel>
-              <Select
-                value={formData.question}
-                onChange={handleInputChange('question')}
-                label='Câu hỏi'
-              >
-                <MenuItem value='CN2: Xây dựng bộ câu hỏi mới'>
-                  CN2: Xây dựng bộ câu hỏi mới
-                </MenuItem>
-                <MenuItem value='CN1: Phỏng vấn cơ bản'>
-                  CN1: Phỏng vấn cơ bản
-                </MenuItem>
-                <MenuItem value='CN3: Đánh giá năng lực'>
-                  CN3: Đánh giá năng lực
-                </MenuItem>
-                <MenuItem value='CN4: Kiểm tra kỹ thuật'>
-                  CN4: Kiểm tra kỹ thuật
-                </MenuItem>
-                <MenuItem value='Khác'>Khác</MenuItem>
-              </Select>
-            </FormControl>
-
-            {/* Case Number */}
-            <TextField
-              fullWidth
-              label='Case Number'
-              value={formData.caseNumber}
-              onChange={handleInputChange('caseNumber')}
-              placeholder='Nhập case number'
-            />
-
-            {/* Ngày phỏng vấn */}
-            <LocalizationProvider
-              dateAdapter={AdapterDateFns}
-              adapterLocale={vi}
-            >
-              <DatePicker
-                label='Ngày phỏng vấn'
-                value={formData.interviewDate}
-                onChange={handleDateChange}
-                format='dd/MM/yyyy'
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    error: false,
-                  },
-                }}
-              />
-            </LocalizationProvider>
-
-            {/* Người đi cùng */}
-            <TextField
-              fullWidth
-              label='Người đi cùng'
-              value={formData.companion}
-              onChange={handleInputChange('companion')}
-              placeholder="Nhập tên người đi cùng hoặc 'Không có'"
-            />
-
-            {/* Ghi chú */}
-            <TextField
-              fullWidth
-              label='Ghi chú'
-              value={formData.notes}
-              onChange={handleInputChange('notes')}
-              placeholder='Nhập ghi chú bổ sung'
-              multiline
-              rows={3}
-            />
-          </Box>
-        </Box>
-      </CardContent>
-
-      <CardActions sx={{ p: 2, pt: 0 }}>
-        <Box sx={{ width: '100%' }}>
-          {uploadError && (
-            <Typography
-              variant='body2'
-              color='error'
-              sx={{ mb: 2, p: 1, bgcolor: 'error.50', borderRadius: 1 }}
-            >
-              {uploadError}
-            </Typography>
-          )}
-
-          {/* ChatGPT Loading State */}
-          {isWaitingForChatGPT && (
-            <Paper
-              elevation={1}
-              sx={{
-                p: 3,
-                mb: 2,
-                bgcolor: 'info.50',
-                border: '1px solid',
-                borderColor: 'info.200',
-                borderRadius: 2,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <CircularProgress
-                  size={24}
-                  sx={{ color: 'info.main' }}
-                />
-                <Box sx={{ width: '100%' }}>
-                  <Typography
-                    variant='subtitle2'
-                    color='info.dark'
-                    sx={{ mb: 1, fontWeight: 600 }}
-                  >
-                    Đang chờ phản hồi từ AI...
-                  </Typography>
-                  <Typography
-                    variant='caption'
-                    color='text.secondary'
-                    sx={{ display: 'block' }}
-                  >
-                    Vui lòng đợi trong giây lát... ({waitingTime}s)
-                  </Typography>
-                </Box>
-              </Box>
-            </Paper>
-          )}
-
-          {/* ChatGPT Response Display */}
-          {latestChatGPTMessage && (
-            <Paper
-              elevation={1}
-              sx={{
-                p: 2,
-                mb: 2,
-                bgcolor: isChatGPTStreaming ? 'info.50' : 'success.50',
-                border: '1px solid',
-                borderColor: isChatGPTStreaming ? 'info.200' : 'success.200',
-                borderRadius: 2,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <Typography
-                  variant='subtitle2'
-                  color={isChatGPTStreaming ? 'info.dark' : 'success.dark'}
-                  sx={{ fontWeight: 600 }}
+              {/* ChatGPT Response Display */}
+              {latestChatGPTMessage && (
+                <Paper
+                  elevation={1}
+                  sx={{
+                    p: 2,
+                    mb: 2,
+                    bgcolor: isChatGPTStreaming ? 'info.50' : 'success.50',
+                    border: '1px solid',
+                    borderColor: isChatGPTStreaming ? 'info.200' : 'success.200',
+                    borderRadius: 2,
+                  }}
                 >
-                  Phản hồi từ AI:
-                </Typography>
-                {isChatGPTStreaming && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <CircularProgress size={16} sx={{ color: 'info.main' }} />
-                    <Typography variant='caption' color='info.main' sx={{ fontWeight: 500 }}>
-                      Đang gõ...
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Typography
+                      variant='subtitle2'
+                      color={isChatGPTStreaming ? 'info.dark' : 'success.dark'}
+                      sx={{ fontWeight: 600 }}
+                    >
+                      Phản hồi từ AI:
                     </Typography>
+                    {isChatGPTStreaming && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <CircularProgress size={16} sx={{ color: 'info.main' }} />
+                        <Typography variant='caption' color='info.main' sx={{ fontWeight: 500 }}>
+                          Đang gõ...
+                        </Typography>
+                      </Box>
+                    )}
+                    {isChatGPTComplete && !isChatGPTStreaming && (
+                      <Typography variant='caption' color='success.main' sx={{ fontWeight: 500 }}>
+                        ✓ Hoàn thành
+                      </Typography>
+                    )}
                   </Box>
-                )}
-                {isChatGPTComplete && !isChatGPTStreaming && (
-                  <Typography variant='caption' color='success.main' sx={{ fontWeight: 500 }}>
-                    ✓ Hoàn thành
-                  </Typography>
-                )}
-              </Box>
-              {/* <Typography variant='body2' sx={{ mb: 1 }}>
+                  {/* <Typography variant='body2' sx={{ mb: 1 }}>
                 {latestChatGPTMessage.text}
               </Typography> */}
 
-              {/* Google Doc Link */}
-              {/* {latestChatGPTMessage.googleDocUrl && (
+                  {/* Google Doc Link */}
+                  {/* {latestChatGPTMessage.googleDocUrl && (
                 <Box
                   sx={{ mt: 2, p: 1, bgcolor: 'primary.50', borderRadius: 1 }}
                 >
@@ -783,178 +994,208 @@ XUẤT TRỰC TIẾP PACKAGE`;
                 </Box>
               )} */}
 
-              <Typography
-                variant='caption'
-                color='text.secondary'
-                sx={{ mt: 1, display: 'block' }}
-              >
-                {new Date(latestChatGPTMessage.ts).toLocaleString('vi-VN')}
-              </Typography>
-            </Paper>
-          )}
-
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              type='submit'
-              variant='contained'
-              size='large'
-              onClick={handleSubmit}
-              disabled={!connected || isSubmitting || isUploading || isWaitingForChatGPT}
-              startIcon={
-                isUploading || isSubmitting || isWaitingForChatGPT ? (
-                  <CircularProgress size={16} color="inherit" />
-                ) : null
-              }
-              sx={{ py: 1.5, flex: 1 }}
-            >
-              {isUploading
-                ? 'Đang upload file...'
-                : isSubmitting
-                  ? 'Đang gửi...'
-                  : isWaitingForChatGPT
-                    ? 'Đang chờ ChatGPT...'
-                    : 'XUẤT TRỰC TIẾP PACKAGE'}
-            </Button>
-
-            <Button
-              variant='outlined'
-              size='large'
-              onClick={handleExportToGoogle}
-              disabled={!latestChatGPTMessage || isExporting || isChatGPTStreaming || !isChatGPTComplete}
-              startIcon={<FileDownload />}
-              sx={{ py: 1.5, minWidth: 140 }}
-            >
-              {isExporting
-                ? 'Đang xuất...'
-                : isChatGPTStreaming
-                  ? 'Đang chờ ChatGPT...'
-                  : 'Xuất File'
-              }
-            </Button>
-          </Box>
-        </Box>
-      </CardActions>
-
-      {/* Export Modal */}
-      <Dialog
-        open={exportModalOpen}
-        onClose={() => { }} // Tắt chức năng đóng khi click bên ngoài
-        maxWidth="sm"
-        fullWidth
-        disableEscapeKeyDown // Tắt chức năng đóng bằng phím Escape
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            boxShadow: '0 10px 40px rgba(0,0,0,0.35)',
-          }
-        }}
-      >
-        <DialogTitle sx={{ pb: 1 }}>
-          {exportSuccess ? 'Xuất file thành công!' : 'Đang xuất file...'}
-        </DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          {!exportSuccess ? (
-            // Loading state
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 3 }}>
-              <Box sx={{ width: '100%', mb: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Đang tạo Google Doc...
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" fontWeight={600}>
-                    {Math.round(exportProgress)}%
-                  </Typography>
-                </Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={exportProgress}
-                  sx={{
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: 'grey.200',
-                    '& .MuiLinearProgress-bar': {
-                      borderRadius: 4,
-                      backgroundColor: exportProgress >= 100 ? 'success.main' : 'primary.main'
-                    }
-                  }}
-                />
-              </Box>
-
-              <Typography variant="h6" color="text.primary" sx={{ mb: 1 }}>
-                {exportProgress < 90 ? 'Đang xử lý dữ liệu...' : 'Đang tạo tài liệu...'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" textAlign="center">
-                {exportProgress < 90
-                  ? 'Vui lòng đợi trong giây lát, chúng tôi đang xử lý dữ liệu của bạn.'
-                  : 'Đang tạo Google Doc, vui lòng đợi thêm chút nữa...'
-                }
-              </Typography>
-            </Box>
-          ) : (
-            // Success state
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2 }}>
-              <Box
-                sx={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: '50%',
-                  bgcolor: 'success.100',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mb: 2,
-                }}
-              >
-                <FileDownload sx={{ fontSize: 32, color: 'success.main' }} />
-              </Box>
-
-              <Typography variant="h6" color="success.dark" sx={{ mb: 2, textAlign: 'center' }}>
-                Google Doc đã được tạo thành công!
-              </Typography>
-
-              {exportedDocUrl ? (
-                <Box sx={{ width: '100%', textAlign: 'center' }}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    size="large"
-                    href={exportedDocUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{
-                      py: 1.5,
-                      px: 4,
-                      borderRadius: 2,
-                      textTransform: 'none',
-                      fontSize: '1rem',
-                      fontWeight: 600,
-                    }}
+                  <Typography
+                    variant='caption'
+                    color='text.secondary'
+                    sx={{ mt: 1, display: 'block' }}
                   >
-                    📄 Mở Google Doc
-                  </Button>
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
-                    Click vào nút trên để mở Google Doc trong tab mới
+                    {new Date(latestChatGPTMessage.ts).toLocaleString('vi-VN')}
+                  </Typography>
+                </Paper>
+              )}
+
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Button
+                  type='submit'
+                  variant='contained'
+                  size='large'
+                  onClick={handleSubmit}
+                  disabled={!connected || isSubmitting || isUploading || isWaitingForChatGPT}
+                  startIcon={
+                    isUploading || isSubmitting || isWaitingForChatGPT ? (
+                      <CircularProgress size={16} color="inherit" />
+                    ) : null
+                  }
+                  sx={{
+                    py: 1.5,
+                    flex: 1,
+                    fontWeight: 'bold',
+                    fontSize: '1.1rem'
+                  }}
+                >
+                  {isUploading
+                    ? '📤 Đang tải file...'
+                    : isSubmitting
+                      ? '🚀 Đang gửi câu hỏi...'
+                      : isWaitingForChatGPT
+                        ? '⏳ Đang chờ AI trả lời...'
+                        : '🤖 Gửi câu hỏi cho AI'}
+                </Button>
+
+                <Button
+                  variant='outlined'
+                  size='large'
+                  onClick={handleExportToGoogle}
+                  disabled={!latestChatGPTMessage || isExporting || isChatGPTStreaming || !isChatGPTComplete}
+                  startIcon={<FileDownload />}
+                  sx={{
+                    py: 1.5,
+                    minWidth: 140,
+                    fontWeight: 'bold'
+                  }}
+                >
+                  {isExporting
+                    ? '📄 Đang xuất...'
+                    : isChatGPTStreaming
+                      ? '⏳ Đang chờ ChatGPT...'
+                      : '📄 Xuất File'
+                  }
+                </Button>
+              </Box>
+            </Box>
+          </CardActions>
+
+          {/* Export Modal */}
+          <Dialog
+            open={exportModalOpen}
+            onClose={() => { }} // Tắt chức năng đóng khi click bên ngoài
+            maxWidth="sm"
+            fullWidth
+            disableEscapeKeyDown // Tắt chức năng đóng bằng phím Escape
+            PaperProps={{
+              sx: {
+                borderRadius: 2,
+                boxShadow: '0 10px 40px rgba(0,0,0,0.35)',
+                bgcolor: 'background.paper',
+                color: 'text.primary',
+              }
+            }}
+          >
+            <DialogTitle sx={{
+              pb: 1,
+              color: 'text.primary',
+              fontWeight: 'bold',
+              fontSize: '1.2rem'
+            }}>
+              {exportSuccess ? '🎉 Xuất file thành công!' : '📄 Đang xuất file...'}
+            </DialogTitle>
+            <DialogContent sx={{
+              pt: 2,
+              color: 'text.primary'
+            }}>
+              {!exportSuccess ? (
+                // Loading state
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 3 }}>
+                  <Box sx={{ width: '100%', mb: 3 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        🔄 Đang tạo Google Doc...
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                        {Math.round(exportProgress)}%
+                      </Typography>
+                    </Box>
+                    <LinearProgress
+                      variant="determinate"
+                      value={exportProgress}
+                      sx={{
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: 'grey.800',
+                        '& .MuiLinearProgress-bar': {
+                          borderRadius: 4,
+                          backgroundColor: exportProgress >= 100 ? 'success.main' : 'primary.main'
+                        }
+                      }}
+                    />
+                  </Box>
+
+                  <Typography variant="h6" color="text.primary" sx={{ mb: 1, fontWeight: 'bold' }}>
+                    {exportProgress < 90 ? '⚙️ Đang xử lý dữ liệu...' : '📄 Đang tạo tài liệu...'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" textAlign="center">
+                    {exportProgress < 90
+                      ? 'Vui lòng đợi trong giây lát, chúng tôi đang xử lý dữ liệu của bạn.'
+                      : 'Đang tạo Google Doc, vui lòng đợi thêm chút nữa...'
+                    }
                   </Typography>
                 </Box>
               ) : (
-                <Typography variant="body2" color="text.secondary" textAlign="center">
-                  File đã được xuất thành công!
-                </Typography>
+                // Success state
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2 }}>
+                  <Box
+                    sx={{
+                      width: 64,
+                      height: 64,
+                      borderRadius: '50%',
+                      bgcolor: 'success.100',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mb: 2,
+                    }}
+                  >
+                    <FileDownload sx={{ fontSize: 32, color: 'success.main' }} />
+                  </Box>
+
+                  <Typography variant="h6" color="success.main" sx={{ mb: 2, textAlign: 'center', fontWeight: 'bold' }}>
+                    🎉 Google Doc đã được tạo thành công!
+                  </Typography>
+
+                  {exportedDocUrl ? (
+                    <Box sx={{ width: '100%', textAlign: 'center' }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="large"
+                        href={exportedDocUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                          py: 1.5,
+                          px: 4,
+                          borderRadius: 2,
+                          textTransform: 'none',
+                          fontSize: '1rem',
+                          fontWeight: 600,
+                        }}
+                      >
+                        📄 Mở Google Doc
+                      </Button>
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
+                        💡 Click vào nút trên để mở Google Doc trong tab mới
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" textAlign="center">
+                      ✅ File đã được xuất thành công!
+                    </Typography>
+                  )}
+                </Box>
               )}
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 1 }}>
-          <Button
-            onClick={handleCloseExportModal}
-            variant="outlined"
-            size="large"
-            sx={{ minWidth: 120 }}
-          >
-            {exportSuccess ? 'Đóng' : 'Hủy'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Card>
+            </DialogContent>
+            <DialogActions sx={{
+              p: 3,
+              pt: 1,
+              bgcolor: 'background.paper',
+              borderTop: '1px solid',
+              borderColor: 'divider'
+            }}>
+              <Button
+                onClick={handleCloseExportModal}
+                variant="outlined"
+                size="large"
+                sx={{
+                  minWidth: 120,
+                  fontWeight: 'bold'
+                }}
+              >
+                {exportSuccess ? '✅ Đóng' : '❌ Hủy'}
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </Card>
+      </Box>
+    </Box>
   );
 }

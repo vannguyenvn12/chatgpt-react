@@ -259,11 +259,6 @@ export default function Form() {
     setExportSuccess(false);
     setExportedDocUrl(null);
     setExportProgress(0);
-
-    // Disconnect socket sau khi xuất file thành công
-    if (exportSuccess && connected) {
-      disconnectSocket();
-    }
   };
 
   const handleExportToGoogle = async () => {
@@ -312,13 +307,34 @@ export default function Form() {
             }));
             setExportedDocUrl(parsedData.googleDocUrl);
             setExportSuccess(true);
+
+            // Disconnect socket ngay khi xuất file thành công
+            if (connected) {
+              setTimeout(() => {
+                disconnectSocket();
+              }, 1000); // Delay 1 giây để user thấy kết quả
+            }
           } else {
             setExportSuccess(true);
+
+            // Disconnect socket ngay khi xuất file thành công
+            if (connected) {
+              setTimeout(() => {
+                disconnectSocket();
+              }, 1000); // Delay 1 giây để user thấy kết quả
+            }
           }
         } catch (parseError) {
           // Nếu không parse được JSON, coi như thành công
           console.log('Response is not JSON, treating as success:', parseError);
           setExportSuccess(true);
+
+          // Disconnect socket ngay khi xuất file thành công
+          if (connected) {
+            setTimeout(() => {
+              disconnectSocket();
+            }, 1000); // Delay 1 giây để user thấy kết quả
+          }
         }
       } else {
         throw new Error(`Export failed: ${response.statusText}`);
@@ -1170,7 +1186,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                   </Typography>
 
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'center', fontSize: '0.9rem', px: 2 }}>
-                    💡 Tôi ngắt kết nối để cho người khác sử dụng. Nếu bạn có nhu cầu tạo câu hỏi tiếp thì nhấn nút kết nối lại nhé.
+                    💡 Tôi sẽ tự động ngắt kết nối sau 1 giây để cho người khác sử dụng. Nếu bạn có nhu cầu tạo câu hỏi tiếp thì nhấn nút kết nối lại nhé.
                   </Typography>
 
                   {exportedDocUrl ? (

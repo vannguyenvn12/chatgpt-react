@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # Frontend Service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatgpt-frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - VITE_SOCKET_URL=https://api-ai.vannguyenv12.com
+      - VITE_API_URL=https://api-ai.vannguyenv12.com
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Certbot for SSL certificates
+  certbot:
+    image: certbot/certbot
+    container_name: chatgpt-certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    command: certonly --webroot --webroot-path=/var/www/certbot --email your-email@example.com --agree-tos --no-eff-email -d chat.icahg.com
+    depends_on:
+      - frontend

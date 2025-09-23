@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3000/api/v1';
+const API_BASE_URL = 'https://api-ai.vannguyenv12.com/api/v1';
 
 export async function uploadToCloudinary(files) {
   console.log('check file', files);

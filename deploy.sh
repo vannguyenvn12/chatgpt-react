@@ -26,9 +26,8 @@ print_warning() {
 
 # Check if running as root
 if [ "$EUID" -eq 0 ]; then
-    print_error "Please don't run this script as root!"
-    print_status "Run: ./deploy.sh"
-    exit 1
+    print_warning "Running as root. This is not recommended but allowed."
+    print_status "Continuing with root privileges..."
 fi
 
 # Check if Docker is installed

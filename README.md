@@ -7,6 +7,7 @@ React frontend application for ChatGPT with Docker deployment using Traefik reve
 **Chỉ cần 1 lệnh duy nhất:**
 
 ```bash
+chmod +x ./deploy.sh
 ./deploy.sh
 ```
 

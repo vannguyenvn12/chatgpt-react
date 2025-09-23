@@ -55,11 +55,46 @@ if docker-compose -f docker-compose-caddy.yml ps | grep -q "Up"; then
     
     # Stop Caddy temporarily
     print_status "Stopping Caddy temporarily..."
-    systemctl stop caddy
+    systemctl stop caddy 2>/dev/null || true
+    
+    # Install nginx if not installed
+    print_status "Installing nginx..."
+    apt update
+    apt install -y nginx
+    
+    # Create nginx config for Let's Encrypt challenge
+    print_status "Creating nginx config for Let's Encrypt challenge..."
+    cat > /etc/nginx/sites-available/chat.icahg.com << 'EOF'
+server {
+    listen 80;
+    server_name chat.icahg.com;
+    
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        try_files $uri =404;
+    }
+    
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+EOF
+    
+    # Enable the site
+    ln -sf /etc/nginx/sites-available/chat.icahg.com /etc/nginx/sites-enabled/
+    rm -f /etc/nginx/sites-enabled/default
+    
+    # Create certbot directory
+    mkdir -p /var/www/certbot
     
     # Start nginx for Let's Encrypt challenge
     print_status "Starting nginx for Let's Encrypt challenge..."
     systemctl start nginx
+    systemctl enable nginx
     
     # Get SSL certificate
     print_status "Getting SSL certificate from Let's Encrypt..."

@@ -70,8 +70,115 @@ if [ -z "$EMAIL" ]; then
     exit 1
 fi
 
-# Create nginx site configuration
-print_status "Creating nginx site configuration..."
+# Create nginx site configuration (HTTP only first)
+print_status "Creating nginx site configuration (HTTP only)..."
+cat > /etc/nginx/sites-available/chat.icahg.com << 'EOF'
+# HTTP server - Proxy to Docker container (temporary)
+server {
+    listen 80;
+    server_name chat.icahg.com;
+    
+    # Let's Encrypt challenge
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+    
+    # Proxy to Docker container
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        
+        # WebSocket support
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+    
+    # Health check
+    location /health {
+        proxy_pass http://localhost:8080/health;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    
+    # API proxy (if needed)
+    location /api/ {
+        proxy_pass https://api-ai.vannguyenv12.com/;
+        proxy_set_header Host api-ai.vannguyenv12.com;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # CORS headers
+        add_header Access-Control-Allow-Origin "http://chat.icahg.com" always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization" always;
+        add_header Access-Control-Allow-Credentials "true" always;
+        
+        # Handle preflight requests
+        if ($request_method = 'OPTIONS') {
+            add_header Access-Control-Allow-Origin "http://chat.icahg.com";
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS";
+            add_header Access-Control-Allow-Headers "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization";
+            add_header Access-Control-Allow-Credentials "true";
+            add_header Access-Control-Max-Age 1728000;
+            add_header Content-Type "text/plain; charset=utf-8";
+            add_header Content-Length 0;
+            return 204;
+        }
+    }
+}
+EOF
+
+# Enable the site
+print_status "Enabling nginx site..."
+ln -sf /etc/nginx/sites-available/chat.icahg.com /etc/nginx/sites-enabled/
+
+# Remove default site if exists
+if [ -f /etc/nginx/sites-enabled/default ]; then
+    rm /etc/nginx/sites-enabled/default
+    print_status "Removed default nginx site"
+fi
+
+# Test nginx configuration
+print_status "Testing nginx configuration..."
+nginx -t
+
+# Get SSL certificate
+print_status "Getting SSL certificate from Let's Encrypt..."
+certbot certonly \
+    --webroot \
+    --webroot-path=/var/www/certbot \
+    --email $EMAIL \
+    --agree-tos \
+    --no-eff-email \
+    --non-interactive \
+    -d chat.icahg.com
+
+# Check if certificate was obtained
+if [ ! -f "/etc/letsencrypt/live/chat.icahg.com/fullchain.pem" ]; then
+    print_error "Failed to obtain SSL certificate!"
+    print_status "Please check your domain DNS settings and try again."
+    print_status "Make sure chat.icahg.com points to this server's IP address."
+    exit 1
+fi
+
+print_success "SSL certificate obtained successfully!"
+
+# Update nginx config to use HTTPS
+print_status "Updating nginx config to use HTTPS..."
 cat > /etc/nginx/sites-available/chat.icahg.com << 'EOF'
 # HTTP to HTTPS redirect
 server {
@@ -173,40 +280,9 @@ server {
 }
 EOF
 
-# Enable the site
-print_status "Enabling nginx site..."
-ln -sf /etc/nginx/sites-available/chat.icahg.com /etc/nginx/sites-enabled/
-
-# Remove default site if exists
-if [ -f /etc/nginx/sites-enabled/default ]; then
-    rm /etc/nginx/sites-enabled/default
-    print_status "Removed default nginx site"
-fi
-
 # Test nginx configuration
 print_status "Testing nginx configuration..."
 nginx -t
-
-# Get SSL certificate
-print_status "Getting SSL certificate from Let's Encrypt..."
-certbot certonly \
-    --webroot \
-    --webroot-path=/var/www/certbot \
-    --email $EMAIL \
-    --agree-tos \
-    --no-eff-email \
-    --non-interactive \
-    -d chat.icahg.com
-
-# Check if certificate was obtained
-if [ ! -f "/etc/letsencrypt/live/chat.icahg.com/fullchain.pem" ]; then
-    print_error "Failed to obtain SSL certificate!"
-    print_status "Please check your domain DNS settings and try again."
-    print_status "Make sure chat.icahg.com points to this server's IP address."
-    exit 1
-fi
-
-print_success "SSL certificate obtained successfully!"
 
 # Reload nginx
 print_status "Reloading nginx..."

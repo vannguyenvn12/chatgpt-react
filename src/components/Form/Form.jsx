@@ -630,7 +630,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                   ✅ Đã kết nối thành công
                 </Typography> */}
                 <Typography variant="body2" sx={{ mt: 1 }}>
-                  ✅ Bạn có thể bắt đầu sử dụng hệ thống.
+                  Bạn có thể bắt đầu sử dụng hệ thống.
                 </Typography>
               </Alert>
             </Box>
@@ -645,7 +645,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                 💡 Điền đầy đủ thông tin bên dưới để nhận phản hồi chính xác từ AI
               </Typography> */}
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5, mt: 2, px: 1 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5, mt: 1, px: 1 }}>
                 {/* File đính kèm - Upload */}
                 <Box>
                   <Typography variant='caption' color="text.secondary" sx={{ mb: 1, display: 'block', fontSize: '0.85rem' }}>

@@ -531,6 +531,8 @@ XUẤT TRỰC TIẾP PACKAGE`;
             borderColor: 'divider',
             boxShadow: '0 10px 40px rgba(0,0,0,0.35)',
             backdropFilter: 'saturate(110%) blur(10px)',
+            maxWidth: '100%',
+            mx: 'auto',
           }}
         >
           <CardHeader
@@ -538,7 +540,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
             // subheader='Điền thông tin và gửi câu hỏi để nhận phản hồi từ AI'
             action={connectionChip}
             sx={{ pb: 0.5 }}
-            titleTypographyProps={{ fontSize: '1.1rem' }}
+            titleTypographyProps={{ fontSize: '1.2rem' }}
           />
 
           {/* Socket Status Banner */}
@@ -636,10 +638,10 @@ XUẤT TRỰC TIẾP PACKAGE`;
                 💡 Điền đầy đủ thông tin bên dưới để nhận phản hồi chính xác từ AI
               </Typography> */}
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5, mt: 2, px: 1 }}>
                 {/* File đính kèm - Upload */}
                 <Box>
-                  <Typography variant='caption' color="text.secondary" sx={{ mb: 1, display: 'block', fontSize: '0.75rem' }}>
+                  <Typography variant='caption' color="text.secondary" sx={{ mb: 1, display: 'block', fontSize: '0.85rem' }}>
                     💡 Tải lên file PDF chứa thông tin liên quan đến câu hỏi phỏng vấn
                   </Typography>
                   {isUploading && (
@@ -660,7 +662,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                       <Typography
                         variant='caption'
                         color='text.secondary'
-                        sx={{ mt: 1, display: 'block', fontSize: '0.75rem' }}
+                        sx={{ mt: 1, display: 'block', fontSize: '0.85rem' }}
                       >
                         Đang upload file... {Math.round(uploadProgress)}%
                       </Typography>
@@ -702,11 +704,11 @@ XUẤT TRỰC TIẾP PACKAGE`;
                           <Typography
                             variant='subtitle2'
                             color='success.dark'
-                            sx={{ fontWeight: 600, fontSize: '0.85rem' }}
+                            sx={{ fontWeight: 600, fontSize: '0.9rem' }}
                           >
                             {formData.fileAttachment.name}
                           </Typography>
-                          <Typography variant='caption' color='text.secondary' sx={{ fontSize: '0.75rem' }}>
+                          <Typography variant='caption' color='text.secondary' sx={{ fontSize: '0.85rem' }}>
                             {(formData.fileAttachment.size / 1024).toFixed(1)} KB
                           </Typography>
                         </Box>
@@ -777,11 +779,11 @@ XUẤT TRỰC TIẾP PACKAGE`;
                           <Typography
                             variant='body2'
                             color={isDragOver ? 'primary.main' : 'text.primary'}
-                            sx={{ mb: 0.25, fontWeight: 500, fontSize: '0.8rem' }}
+                            sx={{ mb: 0.25, fontWeight: 500, fontSize: '0.9rem' }}
                           >
                             {isDragOver ? '📁 Thả file vào đây' : '📁 Tải lên file'}
                           </Typography>
-                          <Typography variant='caption' color='text.secondary' sx={{ fontSize: '0.7rem' }}>
+                          <Typography variant='caption' color='text.secondary' sx={{ fontSize: '0.8rem' }}>
                             Nhấn để chọn file hoặc kéo thả file vào đây
                           </Typography>
                         </Box>
@@ -798,36 +800,36 @@ XUẤT TRỰC TIẾP PACKAGE`;
                 </Box>
 
                 {/* Câu hỏi và Case Number trên cùng 1 hàng */}
-                <Box sx={{ display: 'flex', gap: 2 }}>
+                <Box sx={{ display: 'flex', gap: 2.5 }}>
                   <FormControl sx={{ flex: 1 }}>
-                    <InputLabel sx={{ fontSize: '0.85rem' }}>❓ Câu hỏi phỏng vấn</InputLabel>
+                    <InputLabel sx={{ fontSize: '0.95rem' }}>❓ Câu hỏi phỏng vấn</InputLabel>
                     <Select
                       value={formData.question}
                       onChange={handleInputChange('question')}
                       label='❓ Câu hỏi phỏng vấn'
-                      sx={{ fontSize: '0.85rem' }}
+                      sx={{ fontSize: '0.95rem' }}
                     >
-                      <MenuItem value='CN2: Xây dựng bộ câu hỏi mới' sx={{ fontSize: '0.85rem' }}>
+                      <MenuItem value='CN2: Xây dựng bộ câu hỏi mới' sx={{ fontSize: '0.95rem' }}>
                         CN2: Xây dựng bộ câu hỏi mới
                       </MenuItem>
-                      <MenuItem value='CN1: Phỏng vấn cơ bản' sx={{ fontSize: '0.85rem' }}>
+                      <MenuItem value='CN1: Phỏng vấn cơ bản' sx={{ fontSize: '0.95rem' }}>
                         Option 2 (chưa có)
                       </MenuItem>
-                      <MenuItem value='CN3: Đánh giá năng lực' sx={{ fontSize: '0.85rem' }}>
+                      <MenuItem value='CN3: Đánh giá năng lực' sx={{ fontSize: '0.95rem' }}>
                         Option 3 (chưa có)
                       </MenuItem>
-                      <MenuItem value='CN4: Kiểm tra kỹ thuật' sx={{ fontSize: '0.85rem' }}>
+                      <MenuItem value='CN4: Kiểm tra kỹ thuật' sx={{ fontSize: '0.95rem' }}>
                         Option 4 (chưa có)
                       </MenuItem>
-                      <MenuItem value='Khác' sx={{ fontSize: '0.85rem' }}>Khác</MenuItem>
+                      <MenuItem value='Khác' sx={{ fontSize: '0.95rem' }}>Khác</MenuItem>
                     </Select>
                   </FormControl>
 
                   <TextField
                     sx={{
                       flex: 1,
-                      '& .MuiInputLabel-root': { fontSize: '0.85rem' },
-                      '& .MuiInputBase-input': { fontSize: '0.85rem' }
+                      '& .MuiInputLabel-root': { fontSize: '0.95rem' },
+                      '& .MuiInputBase-input': { fontSize: '0.95rem' }
                     }}
                     label='📋 Case Number'
                     value={formData.caseNumber}
@@ -837,7 +839,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                 </Box>
 
                 {/* Ngày phỏng vấn và Người đi cùng trên cùng 1 hàng */}
-                <Box sx={{ display: 'flex', gap: 2 }}>
+                <Box sx={{ display: 'flex', gap: 2.5 }}>
                   <LocalizationProvider
                     dateAdapter={AdapterDateFns}
                     adapterLocale={vi}
@@ -851,8 +853,8 @@ XUẤT TRỰC TIẾP PACKAGE`;
                         textField: {
                           sx: {
                             flex: 1,
-                            '& .MuiInputLabel-root': { fontSize: '0.85rem' },
-                            '& .MuiInputBase-input': { fontSize: '0.85rem' }
+                            '& .MuiInputLabel-root': { fontSize: '0.95rem' },
+                            '& .MuiInputBase-input': { fontSize: '0.95rem' }
                           },
                           error: false,
                         },
@@ -863,8 +865,8 @@ XUẤT TRỰC TIẾP PACKAGE`;
                   <TextField
                     sx={{
                       flex: 1,
-                      '& .MuiInputLabel-root': { fontSize: '0.85rem' },
-                      '& .MuiInputBase-input': { fontSize: '0.85rem' }
+                      '& .MuiInputLabel-root': { fontSize: '0.95rem' },
+                      '& .MuiInputBase-input': { fontSize: '0.95rem' }
                     }}
                     label='👥 Người đi cùng'
                     value={formData.companion}
@@ -883,8 +885,8 @@ XUẤT TRỰC TIẾP PACKAGE`;
                   multiline
                   rows={3}
                   sx={{
-                    '& .MuiInputLabel-root': { fontSize: '0.85rem' },
-                    '& .MuiInputBase-input': { fontSize: '0.85rem' }
+                    '& .MuiInputLabel-root': { fontSize: '0.95rem' },
+                    '& .MuiInputBase-input': { fontSize: '0.95rem' }
                   }}
                 />
               </Box>
@@ -1021,7 +1023,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                 </Paper>
               )}
 
-              <Box sx={{ display: 'flex', gap: 2 }}>
+              <Box sx={{ display: 'flex', gap: 2.5 }}>
                 <Button
                   type='submit'
                   variant='contained'
@@ -1034,10 +1036,10 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     ) : null
                   }
                   sx={{
-                    py: 1.2,
+                    py: 1.3,
                     flex: 1,
                     fontWeight: 'bold',
-                    fontSize: '0.95rem'
+                    fontSize: '1.05rem'
                   }}
                 >
                   {isUploading
@@ -1056,10 +1058,10 @@ XUẤT TRỰC TIẾP PACKAGE`;
                   disabled={!latestChatGPTMessage || isExporting || isChatGPTStreaming || !isChatGPTComplete}
                   startIcon={<FileDownload />}
                   sx={{
-                    py: 1.2,
-                    minWidth: 120,
+                    py: 1.3,
+                    minWidth: 130,
                     fontWeight: 'bold',
-                    fontSize: '0.9rem'
+                    fontSize: '1rem'
                   }}
                 >
                   {isExporting
@@ -1093,7 +1095,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
               pb: 1,
               color: 'text.primary',
               fontWeight: 'bold',
-              fontSize: '1rem'
+              fontSize: '1.1rem'
             }}>
               {exportSuccess ? '🎉 Xuất file thành công!' : '📄 Đang xuất file...'}
             </DialogTitle>
@@ -1106,10 +1108,10 @@ XUẤT TRỰC TIẾP PACKAGE`;
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 3 }}>
                   <Box sx={{ width: '100%', mb: 3 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem' }}>
                         🔄 Đang tạo Google Doc...
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.8rem' }}>
+                      <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.9rem' }}>
                         {Math.round(exportProgress)}%
                       </Typography>
                     </Box>
@@ -1128,10 +1130,10 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     />
                   </Box>
 
-                  <Typography variant="h6" color="text.primary" sx={{ mb: 1, fontWeight: 'bold', fontSize: '1rem' }}>
+                  <Typography variant="h6" color="text.primary" sx={{ mb: 1, fontWeight: 'bold', fontSize: '1.1rem' }}>
                     {exportProgress < 90 ? '⚙️ Đang xử lý dữ liệu...' : '📄 Đang tạo tài liệu...'}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ fontSize: '0.8rem' }}>
+                  <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ fontSize: '0.9rem' }}>
                     {exportProgress < 90
                       ? 'Vui lòng đợi trong giây lát, chúng tôi đang xử lý dữ liệu của bạn.'
                       : 'Đang tạo Google Doc, vui lòng đợi thêm chút nữa...'
@@ -1156,7 +1158,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     <FileDownload sx={{ fontSize: 32, color: 'success.main' }} />
                   </Box>
 
-                  <Typography variant="h6" color="success.main" sx={{ mb: 2, textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>
+                  <Typography variant="h6" color="success.main" sx={{ mb: 2, textAlign: 'center', fontWeight: 'bold', fontSize: '1.1rem' }}>
                     🎉 Google Doc đã được tạo thành công!
                   </Typography>
 
@@ -1170,22 +1172,22 @@ XUẤT TRỰC TIẾP PACKAGE`;
                         target="_blank"
                         rel="noopener noreferrer"
                         sx={{
-                          py: 1.2,
-                          px: 3,
+                          py: 1.3,
+                          px: 4,
                           borderRadius: 2,
                           textTransform: 'none',
-                          fontSize: '0.9rem',
+                          fontSize: '1rem',
                           fontWeight: 600,
                         }}
                       >
                         📄 Mở Google Doc
                       </Button>
-                      <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block', fontSize: '0.75rem' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block', fontSize: '0.85rem' }}>
                         💡 Click vào nút trên để mở Google Doc trong tab mới
                       </Typography>
                     </Box>
                   ) : (
-                    <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ fontSize: '0.8rem' }}>
+                    <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ fontSize: '0.9rem' }}>
                       ✅ File đã được xuất thành công!
                     </Typography>
                   )}
@@ -1204,9 +1206,9 @@ XUẤT TRỰC TIẾP PACKAGE`;
                 variant="outlined"
                 size="large"
                 sx={{
-                  minWidth: 100,
+                  minWidth: 110,
                   fontWeight: 'bold',
-                  fontSize: '0.85rem'
+                  fontSize: '0.95rem'
                 }}
               >
                 {exportSuccess ? '✅ Đóng' : '❌ Hủy'}

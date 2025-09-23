@@ -52,6 +52,8 @@ Sau khi deploy thành công:
 
 - **Frontend**: `https://chat.icahg.com`
 - **Health Check**: `https://chat.icahg.com/health`
+- **HTTP**: `http://localhost:8080`
+- **HTTPS**: `https://localhost:8443`
 - **API**: `https://api-ai.vannguyenv12.com/`
 - **SSL**: Tự động từ Let's Encrypt
 

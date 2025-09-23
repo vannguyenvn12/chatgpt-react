@@ -142,6 +142,14 @@ else
     print_warning "SSL test failed. Please check the configuration."
 fi
 
+# Test HTTP port
+print_status "Testing HTTP port..."
+if curl -s http://localhost:8080/health > /dev/null; then
+    print_success "HTTP port 8080 is working correctly!"
+else
+    print_warning "HTTP port 8080 test failed."
+fi
+
 # Setup auto-renewal
 print_status "Setting up SSL certificate auto-renewal..."
 cat > /etc/cron.d/certbot-renew << EOF
@@ -154,6 +162,8 @@ echo
 echo -e "${GREEN}📱 Your ChatGPT Frontend is now running with SSL:${NC}"
 echo -e "  Frontend: ${BLUE}https://chat.icahg.com${NC}"
 echo -e "  Health:   ${BLUE}https://chat.icahg.com/health${NC}"
+echo -e "  HTTP:     ${BLUE}http://localhost:8080${NC}"
+echo -e "  HTTPS:    ${BLUE}https://localhost:8443${NC}"
 echo -e "  API:      ${BLUE}https://api-ai.vannguyenv12.com${NC}"
 echo
 echo -e "${GREEN}🔧 Management Commands:${NC}"

@@ -152,9 +152,14 @@ if [ -f /etc/nginx/sites-enabled/default ]; then
     print_status "Removed default nginx site"
 fi
 
-# Test nginx configuration
-print_status "Testing nginx configuration..."
+# Test nginx configuration (HTTP only)
+print_status "Testing nginx configuration (HTTP only)..."
 nginx -t
+
+# Start nginx if not running
+print_status "Starting nginx..."
+systemctl start nginx
+systemctl enable nginx
 
 # Get SSL certificate
 print_status "Getting SSL certificate from Let's Encrypt..."
@@ -177,7 +182,7 @@ fi
 
 print_success "SSL certificate obtained successfully!"
 
-# Update nginx config to use HTTPS
+git# Update nginx config to use HTTPS
 print_status "Updating nginx config to use HTTPS..."
 cat > /etc/nginx/sites-available/chat.icahg.com << 'EOF'
 # HTTP to HTTPS redirect

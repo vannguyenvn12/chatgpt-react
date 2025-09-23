@@ -629,7 +629,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                 {/* <Typography variant="body2" fontWeight="bold">
                   ✅ Đã kết nối thành công
                 </Typography> */}
-                <Typography variant="body2" sx={{ mt: 1 }}>
+                <Typography variant="body2">
                   Bạn có thể bắt đầu sử dụng hệ thống.
                 </Typography>
               </Alert>

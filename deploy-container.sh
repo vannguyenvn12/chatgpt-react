@@ -24,6 +24,10 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
 print_status "Deploying Docker container for chat.icahg.com..."
 
 # Check if Docker is installed

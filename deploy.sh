@@ -1,24 +1,13 @@
 #!/bin/bash
 
-# 🚀 Deploy ChatGPT React với SSL - 1 lệnh duy nhất
-# Script này sẽ deploy toàn bộ với SSL trong 1 lệnh
-
-set -e
-
-# Colors
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-NC='\033[0m'
+NC='\033[0m' # No Color
 
-print_header() {
-    echo -e "${PURPLE}========================================${NC}"
-    echo -e "${PURPLE}🚀 Deploy ChatGPT React với SSL${NC}"
-    echo -e "${PURPLE}========================================${NC}"
-}
-
+# Functions
 print_status() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
@@ -35,152 +24,81 @@ print_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-print_header
-
 # Check if running as root
-if [[ $EUID -ne 0 ]]; then
-    print_error "This script must be run as root (use sudo)"
+if [ "$EUID" -eq 0 ]; then
+    print_error "Please don't run this script as root!"
+    print_status "Run: ./deploy.sh"
     exit 1
 fi
 
 # Check if Docker is installed
 if ! command -v docker &> /dev/null; then
-    print_error "Docker is not installed. Please install Docker first."
+    print_error "Docker is not installed!"
+    print_status "Installing Docker..."
+    curl -fsSL https://get.docker.com -o get-docker.sh
+    sudo sh get-docker.sh
+    sudo usermod -aG docker $USER
+    print_warning "Please logout and login again, then run this script again."
     exit 1
 fi
 
+# Check if Docker Compose is installed
 if ! command -v docker-compose &> /dev/null; then
-    print_error "Docker Compose is not installed. Please install Docker Compose first."
-    exit 1
+    print_error "Docker Compose is not installed!"
+    print_status "Installing Docker Compose..."
+    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
 fi
-
-print_status "Docker and Docker Compose are installed!"
-
-# Get email from user
-read -p "Enter your email for Let's Encrypt: " EMAIL
-
-if [ -z "$EMAIL" ]; then
-    print_error "Email is required for SSL certificate!"
-    exit 1
-fi
-
-print_status "Using email: $EMAIL for SSL certificate"
-
-# Update docker-compose.yml with email
-print_status "Updating docker-compose.yml with email..."
-sed -i "s/your-email@example.com/$EMAIL/g" docker-compose.yml
-
-# Update environment variables
-print_status "Updating environment variables..."
-cat > .env << EOF
-VITE_SOCKET_URL=https://api-ai.vannguyenv12.com
-VITE_API_URL=https://api-ai.vannguyenv12.com
-EOF
-
-print_success "Environment variables updated!"
 
 # Create necessary directories
-print_status "Creating necessary directories..."
-mkdir -p certbot/conf
-mkdir -p certbot/www
+print_status "Creating directories..."
+mkdir -p traefik
+mkdir -p certbot
 
 # Set proper permissions
-chmod -R 755 certbot/
+print_status "Setting permissions..."
+chmod 600 certbot/acme.json 2>/dev/null || true
 
-# Stop any existing containers
+# Stop existing containers
 print_status "Stopping existing containers..."
-docker-compose down 2>/dev/null || true
+docker-compose down -v --remove-orphans 2>/dev/null || true
 
-# Start nginx without SSL first
-print_status "Starting nginx without SSL for initial certificate..."
-docker-compose up --build -d frontend
+# Build and start services
+print_status "Building and starting services..."
+docker-compose up -d --build
 
-# Wait for nginx to start
-print_status "Waiting for nginx to start..."
-sleep 15
+# Wait for services to be ready
+print_status "Waiting for services to be ready..."
+sleep 10
 
-# Test HTTP access
-print_status "Testing HTTP access..."
-if curl -s http://localhost:8080/.well-known/acme-challenge/ > /dev/null; then
-    print_success "HTTP access is working!"
+# Check if services are running
+print_status "Checking service status..."
+if docker-compose ps | grep -q "Up"; then
+    print_success "Services are running!"
+    
+    echo ""
+    print_success "🎉 Deployment completed successfully!"
+    echo ""
+    print_status "Your application is available at:"
+    echo "  🌐 Frontend: https://chat.icahg.com"
+    echo "  🔧 Traefik Dashboard: http://localhost:8080"
+    echo ""
+    print_status "API Configuration:"
+    echo "  📡 API URL: https://api-ai.vannguyenv12.com"
+    echo "  🔌 Socket URL: https://api-ai.vannguyenv12.com"
+    echo ""
+    print_status "Management commands:"
+    echo "  📊 View logs: docker-compose logs -f"
+    echo "  🔄 Restart: docker-compose restart"
+    echo "  🛑 Stop: docker-compose down"
+    echo "  🚀 Start: docker-compose up -d"
+    echo ""
+    print_warning "Note: SSL certificate will be automatically obtained by Traefik"
+    print_warning "It may take a few minutes for HTTPS to be fully available"
+    
 else
-    print_warning "HTTP access test failed, but continuing..."
-fi
-
-# Get SSL certificate
-print_status "Getting SSL certificate from Let's Encrypt..."
-certbot certonly \
-    --webroot \
-    --webroot-path=./certbot/www \
-    --email $EMAIL \
-    --agree-tos \
-    --no-eff-email \
-    --non-interactive \
-    -d chat.icahg.com
-
-# Check if certificate was obtained
-if [ ! -f "/etc/letsencrypt/live/chat.icahg.com/fullchain.pem" ]; then
-    print_error "Failed to obtain SSL certificate!"
-    print_status "Please check your domain DNS settings and try again."
-    print_status "Make sure chat.icahg.com points to this server's IP address."
+    print_error "Some services failed to start!"
+    print_status "Checking logs..."
+    docker-compose logs
     exit 1
 fi
-
-print_success "SSL certificate obtained successfully!"
-
-# Copy certificate to project directory
-print_status "Copying certificate to project directory..."
-cp -r /etc/letsencrypt/live/chat.icahg.com ./certbot/conf/
-cp -r /etc/letsencrypt/archive/chat.icahg.com ./certbot/conf/
-
-# Start all services with SSL
-print_status "Starting all services with SSL..."
-docker-compose down
-docker-compose up --build -d
-
-# Wait for services to start
-print_status "Waiting for services to start..."
-sleep 30
-
-# Test SSL
-print_status "Testing SSL configuration..."
-if curl -s https://chat.icahg.com/health > /dev/null; then
-    print_success "SSL is working correctly!"
-else
-    print_warning "SSL test failed. Please check the configuration."
-fi
-
-# Test HTTP port
-print_status "Testing HTTP port..."
-if curl -s http://localhost:8080/health > /dev/null; then
-    print_success "HTTP port 8080 is working correctly!"
-else
-    print_warning "HTTP port 8080 test failed."
-fi
-
-# Setup auto-renewal
-print_status "Setting up SSL certificate auto-renewal..."
-cat > /etc/cron.d/certbot-renew << EOF
-0 12 * * * root certbot renew --quiet --deploy-hook "docker-compose -f $(pwd)/docker-compose.yml restart frontend"
-EOF
-
-# Show final status
-print_success "🎉 DEPLOYMENT WITH SSL COMPLETED SUCCESSFULLY!"
-echo
-echo -e "${GREEN}📱 Your ChatGPT Frontend is now running with SSL:${NC}"
-echo -e "  Frontend: ${BLUE}https://chat.icahg.com${NC}"
-echo -e "  Health:   ${BLUE}https://chat.icahg.com/health${NC}"
-echo -e "  HTTP:     ${BLUE}http://localhost:8080${NC}"
-echo -e "  HTTPS:    ${BLUE}https://localhost:8443${NC}"
-echo -e "  API:      ${BLUE}https://api-ai.vannguyenv12.com${NC}"
-echo
-echo -e "${GREEN}🔧 Management Commands:${NC}"
-echo -e "  View logs:    ${YELLOW}docker-compose logs -f${NC}"
-echo -e "  Stop all:     ${YELLOW}docker-compose down${NC}"
-echo -e "  Restart:      ${YELLOW}docker-compose restart${NC}"
-echo -e "  Status:       ${YELLOW}docker-compose ps${NC}"
-echo
-echo -e "${GREEN}📋 Service Status:${NC}"
-docker-compose ps
-echo
-print_success "🚀 Your ChatGPT frontend with SSL is ready to use!"

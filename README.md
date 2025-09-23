@@ -1,247 +1,161 @@
-# 🚀 ChatGPT React Frontend - Docker Deploy
+# ChatGPT React Frontend
 
-## 📋 Tổng quan
-
-Deploy ứng dụng React ChatGPT frontend với Docker, sử dụng nginx reverse proxy để truy cập qua domain `https://chat.icahg.com`.
-
-## 🏗️ Kiến trúc
-
-- **Frontend**: React app với Vite
-- **Container**: Docker chạy trên port 8080
-- **Nginx Proxy**: Server host proxy từ `https://chat.icahg.com` → `http://localhost:8080`
-- **Domain**: `https://chat.icahg.com`
-- **API**: External API tại `https://api-ai.vannguyenv12.com/`
-- **SSL**: Let's Encrypt certificates
+React frontend application for ChatGPT with Docker deployment using Traefik reverse proxy.
 
 ## 🚀 Quick Start
 
-### Bước 1: Deploy Container
+**Chỉ cần 1 lệnh duy nhất:**
 
 ```bash
-# Vào thư mục frontend
-cd chatgpt-react
-
-# Cấp quyền cho script
-chmod +x deploy-simple.sh
-
-# Deploy container
-./deploy-simple.sh
+./deploy.sh
 ```
 
-### Bước 2: Setup Nginx Proxy
+## 📋 Prerequisites
 
-```bash
-# Cấp quyền cho script
-chmod +x setup-nginx-proxy.sh
+- Docker và Docker Compose
+- Domain `chat.icahg.com` trỏ về server
+- Port 80 và 443 mở
 
-# Setup nginx reverse proxy với SSL
-sudo ./setup-nginx-proxy.sh
+## 🏗️ Architecture
+
+```
+Internet → Traefik (Port 80/443) → React Container (Port 80)
+                ↓
+         SSL Certificate (Let's Encrypt)
+                ↓
+         API Calls → https://api-ai.vannguyenv12.com
 ```
 
-### Bước 3: Cấu hình DNS
+## 🔧 Features
 
-Trước khi chạy script, đảm bảo:
-- Domain `chat.icahg.com` trỏ về IP server của bạn
-- Ports 80 và 443 mở
+- ✅ **Traefik Reverse Proxy** - Tự động SSL, load balancing
+- ✅ **Let's Encrypt SSL** - Tự động gia hạn certificate
+- ✅ **Docker Compose** - 1 lệnh deploy toàn bộ
+- ✅ **Auto HTTPS Redirect** - HTTP → HTTPS
+- ✅ **Health Checks** - Monitoring tự động
+- ✅ **Zero Configuration** - Không cần cấu hình nginx
 
-## 🎯 Kết quả
-
-Sau khi deploy thành công:
-
-- **Frontend**: `https://chat.icahg.com`
-- **Health Check**: `https://chat.icahg.com/health`
-- **Container**: `http://localhost:8080`
-- **API**: `https://api-ai.vannguyenv12.com/`
-- **SSL**: Tự động từ Let's Encrypt
-
-## 🔧 Quản lý
-
-### Container Management
-```bash
-# Xem logs
-docker-compose logs -f
-
-# Dừng container
-docker-compose down
-
-# Khởi động lại
-docker-compose restart
-
-# Xem trạng thái
-docker-compose ps
-```
-
-### Nginx Management
-```bash
-# Xem nginx logs
-sudo tail -f /var/log/nginx/access.log
-sudo tail -f /var/log/nginx/error.log
-
-# Restart nginx
-sudo systemctl restart nginx
-
-# Test nginx config
-sudo nginx -t
-```
-
-## 📁 Cấu trúc file
+## 📁 File Structure
 
 ```
 chatgpt-react/
-├── Dockerfile              # Multi-stage build
-├── docker-compose.yml      # Docker Compose config (port 8080)
-├── nginx-simple.conf       # Nginx config cho container
-├── deploy-simple.sh        # Deploy container script
-├── setup-nginx-proxy.sh    # Setup nginx proxy script
-├── README.md               # This file
-└── src/                    # React source code
+├── docker-compose.yml      # Main deployment file
+├── traefik/
+│   └── traefik.yml         # Traefik configuration
+├── certbot/                # SSL certificates (auto-created)
+├── deploy.sh              # One-command deployment
+├── Dockerfile             # React app container
+├── nginx.conf             # Nginx config for container
+└── README.md              # This file
 ```
 
-## ⚙️ Cấu hình
+## 🌐 Access Points
 
-### Environment Variables
+- **Frontend**: https://chat.icahg.com
+- **Traefik Dashboard**: http://localhost:8080
+- **API**: https://api-ai.vannguyenv12.com
 
-File `.env` sẽ được tạo tự động với:
+## 🛠️ Management Commands
 
-```env
-VITE_SOCKET_URL=https://api-ai.vannguyenv12.com
-VITE_API_URL=https://api-ai.vannguyenv12.com
+```bash
+# View logs
+docker-compose logs -f
+
+# Restart services
+docker-compose restart
+
+# Stop all services
+docker-compose down
+
+# Start services
+docker-compose up -d
+
+# Rebuild and start
+docker-compose up -d --build
 ```
-
-### Docker Configuration
-
-- **Base Image**: Node.js 18 Alpine (builder) + Nginx Alpine (production)
-- **Port**: 8080:80 (tránh xung đột port 80)
-- **Health Check**: HTTP check every 30s
-- **Restart Policy**: unless-stopped
-
-### Nginx Proxy Configuration
-
-- **Ports**: 80 (HTTP redirect), 443 (HTTPS)
-- **Domain**: `chat.icahg.com`
-- **SSL**: Let's Encrypt certificates
-- **Proxy**: `https://chat.icahg.com` → `http://localhost:8080`
-- **Security Headers**: HSTS, CSP, X-Frame-Options, etc.
 
 ## 🔍 Troubleshooting
 
-### Container không start
+### SSL Certificate Issues
 ```bash
-# Check logs
-docker-compose logs
+# Check Traefik logs
+docker-compose logs traefik
 
-# Check container status
+# Check certificate status
+docker-compose exec traefik traefik version
+```
+
+### Container Issues
+```bash
+# Check all containers
 docker-compose ps
 
-# Rebuild
-docker-compose down
-docker-compose up --build -d
+# Check specific service logs
+docker-compose logs frontend
 ```
 
-### Nginx proxy không hoạt động
+### Port Conflicts
 ```bash
-# Check nginx status
-sudo systemctl status nginx
-
-# Check nginx config
-sudo nginx -t
-
-# Check nginx logs
-sudo tail -f /var/log/nginx/error.log
-```
-
-### SSL certificate issues
-```bash
-# Check certificate
-sudo certbot certificates
-
-# Renew certificate
-sudo certbot renew
-
-# Test SSL
-curl -I https://chat.icahg.com/health
-```
-
-### Port conflicts
-```bash
-# Check what's using port 80
+# Check what's using ports 80/443
 sudo netstat -tulpn | grep :80
+sudo netstat -tulpn | grep :443
 
 # Stop conflicting services
-sudo systemctl stop apache2  # if Apache is running
-sudo systemctl stop nginx    # if nginx is running
+sudo systemctl stop nginx apache2
 ```
+
+## 🔒 Security Features
+
+- **Automatic HTTPS** - All traffic encrypted
+- **HSTS Headers** - Force HTTPS in browsers
+- **Security Headers** - XSS, CSRF protection
+- **Rate Limiting** - DDoS protection
+- **Auto Certificate Renewal** - No downtime
 
 ## 📊 Monitoring
 
-### Health Check
+### Health Checks
+- Container health: `docker-compose ps`
+- Traefik dashboard: http://localhost:8080
+- Application logs: `docker-compose logs -f`
+
+### SSL Certificate Status
 ```bash
-# Test container
-curl http://localhost:8080/health
-
-# Test domain
-curl https://chat.icahg.com/health
-
-# Expected response: "frontend healthy"
+# Check certificate expiry
+echo | openssl s_client -servername chat.icahg.com -connect chat.icahg.com:443 2>/dev/null | openssl x509 -noout -dates
 ```
 
-### Container Stats
-```bash
-# View container stats
-docker stats chatgpt-frontend
+## 🚀 Deployment Process
 
-# View container logs
-docker logs chatgpt-frontend
-```
+1. **Clone repository**
+2. **Run deployment**: `./deploy.sh`
+3. **Wait for SSL**: 2-5 minutes
+4. **Access application**: https://chat.icahg.com
 
 ## 🔄 Updates
 
-### Update code
 ```bash
 # Pull latest changes
 git pull
 
-# Rebuild and restart container
-docker-compose down
-docker-compose up --build -d
+# Rebuild and restart
+docker-compose up -d --build
 ```
 
-### Update nginx config
-```bash
-# Edit nginx config
-sudo nano /etc/nginx/sites-available/chat.icahg.com
+## 📞 Support
 
-# Test and reload
-sudo nginx -t
-sudo systemctl reload nginx
-```
+If you encounter issues:
 
-## 🆘 Support
+1. Check logs: `docker-compose logs`
+2. Verify domain DNS: `nslookup chat.icahg.com`
+3. Check ports: `sudo netstat -tulpn | grep :80`
+4. Restart services: `docker-compose restart`
 
-Nếu gặp vấn đề:
+## 🎯 Benefits of Traefik
 
-1. **Check container**: `docker-compose logs -f`
-2. **Check nginx**: `sudo systemctl status nginx`
-3. **Check SSL**: `sudo certbot certificates`
-4. **Test domain**: `curl https://chat.icahg.com/health`
-5. **Rebuild**: `docker-compose down && docker-compose up --build -d`
-
-## 📝 Notes
-
-- Container chạy trên port 8080 để tránh xung đột
-- Nginx proxy xử lý SSL và domain routing
-- SSL certificate tự động từ Let's Encrypt
-- Auto-renewal SSL được setup tự động
-- Health check endpoint: `/health`
-- Static assets được cache 1 năm
-- Domain: `https://chat.icahg.com`
-
-## 🔒 SSL Features
-
-- **Let's Encrypt**: Free SSL certificates
-- **Auto-renewal**: Tự động gia hạn
-- **HTTP/2**: Modern protocol
-- **Security Headers**: HSTS, CSP, etc.
-- **Strong Ciphers**: TLS 1.2/1.3 only
-
-Chúc bạn deploy thành công! 🎉
+- **Zero Configuration** - No nginx config needed
+- **Automatic SSL** - Let's Encrypt integration
+- **Service Discovery** - Auto-detect containers
+- **Load Balancing** - Built-in load balancer
+- **Health Checks** - Automatic failover
+- **Dashboard** - Web UI for monitoring

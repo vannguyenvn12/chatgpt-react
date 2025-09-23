@@ -15,7 +15,32 @@
 
 ## 🚀 Quick Start
 
-### Bước 1: Chuẩn bị
+### Phương án 1: Nginx Server + Docker Container (Khuyến nghị)
+
+#### Bước 1: Setup Nginx Server
+
+```bash
+# Vào thư mục frontend
+cd chatgpt-react
+
+# Cấp quyền cho script
+chmod +x setup-nginx-server.sh
+
+# Chạy setup nginx server
+sudo ./setup-nginx-server.sh
+```
+
+#### Bước 2: Deploy Docker Container
+
+```bash
+# Cấp quyền cho script
+chmod +x deploy-container.sh
+
+# Deploy container
+./deploy-container.sh
+```
+
+### Phương án 2: Container trực tiếp (Nếu không có nginx server)
 
 ```bash
 # Vào thư mục frontend
@@ -23,22 +48,10 @@ cd chatgpt-react
 
 # Cấp quyền cho script
 chmod +x deploy-ssl.sh
-```
 
-### Bước 2: Deploy với SSL
-
-```bash
 # Chạy script deploy với SSL
 sudo ./deploy-ssl.sh
 ```
-
-Script sẽ:
-- Kiểm tra Docker và Docker Compose
-- Hỏi email cho Let's Encrypt
-- Tạo file `.env` với API URL
-- Lấy SSL certificate cho `chat.icahg.com`
-- Build và chạy container với HTTPS
-- Setup auto-renewal cho SSL
 
 ### Bước 3: Cấu hình DNS
 

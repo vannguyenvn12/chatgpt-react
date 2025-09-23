@@ -8,8 +8,8 @@ services:
       dockerfile: Dockerfile
     container_name: chatgpt-frontend
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
+      - "8443:443"
     environment:
       - VITE_SOCKET_URL=https://api-ai.vannguyenv12.com
       - VITE_API_URL=https://api-ai.vannguyenv12.com

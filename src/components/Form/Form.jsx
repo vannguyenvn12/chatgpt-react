@@ -626,11 +626,11 @@ XUẤT TRỰC TIẾP PACKAGE`;
                 severity="success"
                 sx={{ mb: 2 }}
               >
-                <Typography variant="body2" fontWeight="bold">
+                {/* <Typography variant="body2" fontWeight="bold">
                   ✅ Đã kết nối thành công
-                </Typography>
+                </Typography> */}
                 <Typography variant="body2" sx={{ mt: 1 }}>
-                  🚀 Bạn có thể bắt đầu sử dụng hệ thống. Điền thông tin bên dưới và nhấn "Gửi câu hỏi"
+                  ✅ Bạn có thể bắt đầu sử dụng hệ thống.
                 </Typography>
               </Alert>
             </Box>

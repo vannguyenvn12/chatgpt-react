@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket.IO Debug</title>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Socket.IO Debug Tool</h1>
+    <div id="status">Initializing...</div>
+    <div id="logs" style="font-family: monospace; white-space: pre-wrap; background: #f5f5f5; padding: 10px; margin: 10px 0;"></div>
+    
+    <button onclick="testConnection()">Test Connection</button>
+    <button onclick="testRequestConnect()">Test Request Connect</button>
+    <button onclick="clearLogs()">Clear Logs</button>
+    
+    <script>
+        const API_URL = 'https://api-ai.vannguyenv12.com';
+        const statusDiv = document.getElementById('status');
+        const logsDiv = document.getElementById('logs');
+        let socket = null;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : type === 'success' ? 'green' : type === 'warning' ? 'orange' : 'black';
+            const logMessage = `[${timestamp}] ${message}`;
+            console.log(logMessage);
+            logsDiv.innerHTML += `<div style="color: ${color}">${logMessage}</div>`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+        
+        function clearLogs() {
+            logsDiv.innerHTML = '';
+        }
+        
+        function testConnection() {
+            log('🔍 Starting connection test...');
+            statusDiv.innerHTML = 'Connecting...';
+            statusDiv.style.color = 'orange';
+            
+            if (socket) {
+                socket.disconnect();
+            }
+            
+            socket = io(API_URL, {
+                path: '/ws',
+                transports: ['websocket'],
+                autoConnect: true,
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+                timeout: 20000
+            });
+            
+            // Connection events
+            socket.on('connect', () => {
+                log('✅ Socket connected: ' + socket.id, 'success');
+                log('Transport: ' + socket.io.engine.transport.name, 'info');
+                statusDiv.innerHTML = 'Connected ✅';
+                statusDiv.style.color = 'green';
+            });
+            
+            socket.on('connect_error', (error) => {
+                log('❌ Connection error: ' + error.message, 'error');
+                log('Error type: ' + error.type, 'error');
+                log('Error description: ' + error.description, 'error');
+                statusDiv.innerHTML = 'Connection Error ❌';
+                statusDiv.style.color = 'red';
+            });
+            
+            socket.on('disconnect', (reason) => {
+                log('🔌 Socket disconnected: ' + reason, 'warning');
+                statusDiv.innerHTML = 'Disconnected 🔌';
+                statusDiv.style.color = 'orange';
+            });
+            
+            // Server events
+            socket.on('socket_connected', (data) => {
+                log('🎉 Socket management connected: ' + JSON.stringify(data), 'success');
+            });
+            
+            socket.on('socket_error', (data) => {
+                log('⚠️ Socket management error: ' + JSON.stringify(data), 'error');
+            });
+            
+            socket.on('socket_occupied', (data) => {
+                log('🚫 Socket occupied: ' + JSON.stringify(data), 'warning');
+            });
+            
+            socket.on('socket_available', (data) => {
+                log('✅ Socket available: ' + JSON.stringify(data), 'success');
+            });
+            
+            // Test ping/pong
+            socket.on('pong', () => {
+                log('🏓 Pong received', 'success');
+            });
+            
+            // Test ping after 2 seconds
+            setTimeout(() => {
+                if (socket && socket.connected) {
+                    log('📤 Sending ping...');
+                    socket.emit('ping');
+                }
+            }, 2000);
+        }
+        
+        function testRequestConnect() {
+            if (!socket || !socket.connected) {
+                log('❌ Socket not connected, cannot test request_connect', 'error');
+                return;
+            }
+            
+            const userId = 'debug_user_' + Date.now();
+            log('📤 Sending request_connect for user: ' + userId);
+            socket.emit('request_connect', { userId });
+        }
+        
+        // Auto-start test
+        window.onload = () => {
+            log('🚀 Page loaded, starting debug...');
+            testConnection();
+        };
+    </script>
+</body>
+</html>

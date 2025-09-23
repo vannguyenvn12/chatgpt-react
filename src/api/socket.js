@@ -4,14 +4,24 @@ let socket = null;
 
 export function getSocket() {
     if (!socket) {
-        socket = io(import.meta.env.VITE_SOCKET_URL, {
-            path: '/ws',            // khớp với server nếu bạn đổi
+        const socketUrl = import.meta.env.VITE_SOCKET_URL;
+        console.log('🔧 Creating socket connection to:', socketUrl);
+
+        socket = io(socketUrl, {
+            path: '/ws',
             transports: ['websocket'],
-            autoConnect: false,     // chủ động connect trong Provider
+            autoConnect: false,     // Không tự động kết nối, phải bấm nút
             reconnection: true,
             reconnectionAttempts: Infinity,
             reconnectionDelay: 1000,
-            auth: (cb) => cb({ token: 'optional-token' }),
+            // Bỏ auth để giống chatgpt-inject
+        });
+
+        console.log('🔧 Socket created with config:', {
+            url: socketUrl,
+            path: '/ws',
+            transports: ['websocket'],
+            autoConnect: false
         });
     }
     return socket;

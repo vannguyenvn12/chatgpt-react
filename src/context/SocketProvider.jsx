@@ -15,6 +15,8 @@ export function SocketProvider({ children }) {
     useEffect(() => {
         // đăng ký sự kiện
         const onConnect = () => {
+            console.log('🔌 Socket connected successfully:', socket.id);
+            console.log('🔌 Socket transport:', socket.io.engine.transport.name);
             setConnected(true);
             setConnecting(false);
             setSocketError('');
@@ -24,12 +26,14 @@ export function SocketProvider({ children }) {
             setConnecting(false);
             setSocketError('');
         };
-        const onConnectError = () => {
+        const onConnectError = (error) => {
+            console.error('❌ Socket connection error:', error);
             setConnecting(false);
         };
 
         // Socket management events
         const onSocketConnected = (data) => {
+            console.log('🎉 Socket management connected:', data);
             setConnected(true);
             setConnecting(false);
             setSocketError('');
@@ -46,6 +50,7 @@ export function SocketProvider({ children }) {
         };
 
         const onSocketError = (data) => {
+            console.error('⚠️ Socket management error:', data);
             setConnecting(false);
             setSocketError(data.message);
             if (data.conflict) {
@@ -55,6 +60,7 @@ export function SocketProvider({ children }) {
         };
 
         const onSocketOccupied = (data) => {
+            console.log('🚫 Socket occupied:', data);
             setIsWaiting(true);
             setWaitingMessage(data.message);
             setConnected(false);
@@ -62,6 +68,7 @@ export function SocketProvider({ children }) {
         };
 
         const onSocketAvailable = (data) => {
+            console.log('✅ Socket available:', data);
             setIsWaiting(false);
             setWaitingMessage('');
             setSocketError('');
@@ -76,10 +83,8 @@ export function SocketProvider({ children }) {
         socket.on('socket_occupied', onSocketOccupied);
         socket.on('socket_available', onSocketAvailable);
 
-        // Kiểm tra trạng thái hiện tại
-        if (socket.connected) {
-            setConnected(true);
-        }
+        // Không tự động kết nối, chờ người dùng bấm nút
+        console.log('🔌 Socket created but not connected, waiting for user to click connect button');
 
         // cleanup
         return () => {
@@ -96,22 +101,31 @@ export function SocketProvider({ children }) {
 
     const connectSocket = () => {
         if (!socket.connected && !connecting) {
+            console.log('🚀 User clicked connect button, attempting to connect socket...');
             setConnecting(true);
             setSocketError('');
             socket.connect();
             // Sau khi connect thành công, request socket access
             setTimeout(() => {
                 if (socket.connected) {
+                    console.log('📤 Sending request_connect for user:', userId);
                     socket.emit('request_connect', { userId });
+                } else {
+                    console.log('❌ Socket not connected, cannot send request_connect');
                 }
-            }, 100);
+            }, 1000); // Tăng timeout để đảm bảo kết nối ổn định
+        } else {
+            console.log('⚠️ Socket already connected or connecting');
         }
     };
 
     const disconnectSocket = () => {
         if (socket.connected) {
+            console.log('🔌 Disconnecting socket for user:', userId);
             socket.emit('request_disconnect', { userId });
             socket.disconnect();
+        } else {
+            console.log('⚠️ Socket not connected, cannot disconnect');
         }
     };
 

@@ -624,7 +624,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
             <Box sx={{ px: 2, pb: 2 }}>
               <Alert
                 severity="success"
-                sx={{ mb: 2 }}
+                sx={{ mb: 0 }}
               >
                 {/* <Typography variant="body2" fontWeight="bold">
                   ✅ Đã kết nối thành công

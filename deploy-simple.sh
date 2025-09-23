@@ -1,17 +1,13 @@
 #!/bin/bash
 
-# 🚀 Deploy ChatGPT React - Simple Version
-# Script này sẽ deploy container đơn giản trên port 8080
-
-set -e
-
-# Colors
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m'
+NC='\033[0m' # No Color
 
+# Functions
 print_status() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
@@ -28,65 +24,44 @@ print_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-print_status "🚀 Deploying ChatGPT React container..."
-
-# Check if Docker is installed
-if ! command -v docker &> /dev/null; then
-    print_error "Docker is not installed. Please install Docker first."
-    exit 1
-fi
-
-if ! command -v docker-compose &> /dev/null; then
-    print_error "Docker Compose is not installed. Please install Docker Compose first."
-    exit 1
-fi
-
-# Update environment variables
-print_status "Updating environment variables..."
-cat > .env << EOF
-VITE_SOCKET_URL=https://api-ai.vannguyenv12.com
-VITE_API_URL=https://api-ai.vannguyenv12.com
-EOF
-
-# Stop any existing containers
+# Stop existing containers
 print_status "Stopping existing containers..."
-docker-compose down 2>/dev/null || true
+docker-compose -f docker-compose-simple.yml down -v --remove-orphans 2>/dev/null || true
 
-# Build and start container
-print_status "Building and starting container..."
-docker-compose up --build -d
+# Build and start services
+print_status "Building and starting services..."
+docker-compose -f docker-compose-simple.yml up -d --build
 
-# Wait for container to start
-print_status "Waiting for container to start..."
+# Wait for services to be ready
+print_status "Waiting for services to be ready..."
 sleep 10
 
-# Test container
-print_status "Testing container..."
-if curl -s http://localhost:8080/health > /dev/null; then
-    print_success "Container is running successfully!"
+# Check if services are running
+print_status "Checking service status..."
+if docker-compose -f docker-compose-simple.yml ps | grep -q "Up"; then
+    print_success "Services are running!"
+    
+    echo ""
+    print_success "🎉 Deployment completed successfully!"
+    echo ""
+    print_status "Your application is available at:"
+    echo "  🌐 Frontend: http://chat.icahg.com (or your server IP)"
+    echo ""
+    print_status "API Configuration:"
+    echo "  📡 API URL: https://api-ai.vannguyenv12.com"
+    echo "  🔌 Socket URL: https://api-ai.vannguyenv12.com"
+    echo ""
+    print_status "Management commands:"
+    echo "  📊 View logs: docker-compose -f docker-compose-simple.yml logs -f"
+    echo "  🔄 Restart: docker-compose -f docker-compose-simple.yml restart"
+    echo "  🛑 Stop: docker-compose -f docker-compose-simple.yml down"
+    echo "  🚀 Start: docker-compose -f docker-compose-simple.yml up -d"
+    echo ""
+    print_warning "Note: This is HTTP only. For HTTPS, you need to setup SSL separately."
+    
 else
-    print_warning "Container health check failed, but it might still be starting..."
+    print_error "Some services failed to start!"
+    print_status "Checking logs..."
+    docker-compose -f docker-compose-simple.yml logs
+    exit 1
 fi
-
-# Show final status
-print_success "🎉 CONTAINER DEPLOYMENT COMPLETED!"
-echo
-echo -e "${GREEN}📱 Your container is running:${NC}"
-echo -e "  Container: ${BLUE}http://localhost:8080${NC}"
-echo -e "  Health:    ${BLUE}http://localhost:8080/health${NC}"
-echo -e "  Domain:    ${BLUE}https://chat.icahg.com${NC} (after nginx proxy setup)"
-echo
-echo -e "${GREEN}🔧 Management Commands:${NC}"
-echo -e "  View logs:    ${YELLOW}docker-compose logs -f${NC}"
-echo -e "  Stop:         ${YELLOW}docker-compose down${NC}"
-echo -e "  Restart:      ${YELLOW}docker-compose restart${NC}"
-echo -e "  Status:       ${YELLOW}docker-compose ps${NC}"
-echo
-echo -e "${GREEN}📋 Container Status:${NC}"
-docker-compose ps
-echo
-echo -e "${GREEN}🔧 Next Steps:${NC}"
-echo -e "  1. Setup nginx proxy: ${YELLOW}sudo ./setup-nginx-proxy.sh${NC}"
-echo -e "  2. Test domain: ${YELLOW}curl https://chat.icahg.com/health${NC}"
-echo
-print_success "🚀 Your container is ready for nginx proxy!"

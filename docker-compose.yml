@@ -12,6 +12,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik:/etc/traefik
       - ./certbot:/etc/certbot
+      - certbot_data:/etc/certbot
     command:
       - --api.dashboard=true
       - --api.insecure=true
@@ -23,6 +24,7 @@ services:
       - --certificatesresolvers.letsencrypt.acme.email=npnv.vn1@gmail.com
       - --certificatesresolvers.letsencrypt.acme.storage=/etc/certbot/acme.json
       - --global.sendanonymoususage=false
+      - --log.level=DEBUG
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.rule=Host(`traefik.chat.icahg.com`)"

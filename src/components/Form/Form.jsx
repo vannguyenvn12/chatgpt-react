@@ -448,11 +448,13 @@ XUẤT TRỰC TIẾP PACKAGE`;
   return (
     <Box sx={{
       display: 'flex',
-      gap: { xs: 2, lg: 3 },
-      maxWidth: 1200,
-      mx: 'auto',
+      gap: { xs: 0, lg: 0 },
+      maxWidth: '100%',
+      mx: 0,
       flexDirection: { xs: 'column', lg: 'row' },
-      px: { xs: 2, sm: 3, lg: 0 }
+      px: 0,
+      mt: 0,
+      pt: 0
     }}>
       {/* Hướng dẫn sử dụng - Sidebar */}
       {(
@@ -472,7 +474,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
               bgcolor: 'grey.900',
               border: '1px solid',
               borderColor: 'grey.700',
-              mb: { xs: 2, lg: 0 }
+              mb: 0
             }}
           >
             <CardHeader

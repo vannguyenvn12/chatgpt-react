@@ -28,8 +28,8 @@ export default function App() {
         <Container
           maxWidth={false}
           sx={{
-            maxWidth: 1100,
-            py: 6,
+            maxWidth: '100%',
+            py: 0,
             display: 'flex',
             justifyContent: 'center',
           }}

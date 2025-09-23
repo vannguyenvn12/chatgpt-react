@@ -621,7 +621,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
 
           {/* Connected Banner */}
           {connected && (
-            <Box sx={{ px: 2, pb: 2 }}>
+            <Box sx={{ px: 2 }}>
               <Alert
                 severity="success"
                 sx={{ mb: 0 }}

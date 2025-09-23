@@ -93,11 +93,19 @@ docker-compose down 2>/dev/null || true
 
 # Start nginx without SSL first
 print_status "Starting nginx without SSL for initial certificate..."
-docker-compose up -d frontend
+docker-compose up --build -d frontend
 
 # Wait for nginx to start
 print_status "Waiting for nginx to start..."
 sleep 15
+
+# Test HTTP access
+print_status "Testing HTTP access..."
+if curl -s http://localhost:8080/.well-known/acme-challenge/ > /dev/null; then
+    print_success "HTTP access is working!"
+else
+    print_warning "HTTP access test failed, but continuing..."
+fi
 
 # Get SSL certificate
 print_status "Getting SSL certificate from Let's Encrypt..."

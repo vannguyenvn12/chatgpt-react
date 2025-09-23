@@ -535,9 +535,10 @@ XUẤT TRỰC TIẾP PACKAGE`;
         >
           <CardHeader
             title='Hệ Thống Phỏng Vấn AI'
-            subheader='Điền thông tin và gửi câu hỏi để nhận phản hồi từ AI'
+            // subheader='Điền thông tin và gửi câu hỏi để nhận phản hồi từ AI'
             action={connectionChip}
             sx={{ pb: 0.5 }}
+            titleTypographyProps={{ fontSize: '1.1rem' }}
           />
 
           {/* Socket Status Banner */}
@@ -638,10 +639,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
                 {/* File đính kèm - Upload */}
                 <Box>
-                  <Typography variant='subtitle2' gutterBottom>
-                    📎 File đính kèm (PDF)
-                  </Typography>
-                  <Typography variant='caption' color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                  <Typography variant='caption' color="text.secondary" sx={{ mb: 1, display: 'block', fontSize: '0.75rem' }}>
                     💡 Tải lên file PDF chứa thông tin liên quan đến câu hỏi phỏng vấn
                   </Typography>
                   {isUploading && (
@@ -662,7 +660,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                       <Typography
                         variant='caption'
                         color='text.secondary'
-                        sx={{ mt: 1, display: 'block' }}
+                        sx={{ mt: 1, display: 'block', fontSize: '0.75rem' }}
                       >
                         Đang upload file... {Math.round(uploadProgress)}%
                       </Typography>
@@ -704,11 +702,11 @@ XUẤT TRỰC TIẾP PACKAGE`;
                           <Typography
                             variant='subtitle2'
                             color='success.dark'
-                            sx={{ fontWeight: 600 }}
+                            sx={{ fontWeight: 600, fontSize: '0.85rem' }}
                           >
                             {formData.fileAttachment.name}
                           </Typography>
-                          <Typography variant='caption' color='text.secondary'>
+                          <Typography variant='caption' color='text.secondary' sx={{ fontSize: '0.75rem' }}>
                             {(formData.fileAttachment.size / 1024).toFixed(1)} KB
                           </Typography>
                         </Box>
@@ -739,7 +737,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                         cursor: 'pointer',
                         transition: 'all 0.3s ease',
                         transform: isDragOver ? 'scale(1.02)' : 'scale(1)',
-                        minHeight: 120,
+                        minHeight: 60,
                         '&:hover': {
                           borderColor: 'primary.main',
                           bgcolor: 'primary.900',
@@ -756,12 +754,12 @@ XUẤT TRỰC TIẾP PACKAGE`;
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
-                          gap: 1.5,
+                          gap: 0.5,
                         }}
                       >
                         <Box
                           sx={{
-                            p: 1.5,
+                            p: 0.5,
                             borderRadius: '50%',
                             bgcolor: isDragOver ? 'primary.800' : 'grey.800',
                             transition: 'all 0.3s ease',
@@ -769,7 +767,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                         >
                           <CloudUpload
                             sx={{
-                              fontSize: 32,
+                              fontSize: 20,
                               color: isDragOver ? 'primary.main' : 'grey.400',
                               transition: 'all 0.3s ease',
                             }}
@@ -777,13 +775,13 @@ XUẤT TRỰC TIẾP PACKAGE`;
                         </Box>
                         <Box>
                           <Typography
-                            variant='subtitle1'
+                            variant='body2'
                             color={isDragOver ? 'primary.main' : 'text.primary'}
-                            sx={{ mb: 0.5, fontWeight: 500 }}
+                            sx={{ mb: 0.25, fontWeight: 500, fontSize: '0.8rem' }}
                           >
                             {isDragOver ? '📁 Thả file vào đây' : '📁 Tải lên file'}
                           </Typography>
-                          <Typography variant='body2' color='text.secondary' sx={{ fontSize: '0.875rem' }}>
+                          <Typography variant='caption' color='text.secondary' sx={{ fontSize: '0.7rem' }}>
                             Nhấn để chọn file hoặc kéo thả file vào đây
                           </Typography>
                         </Box>
@@ -799,66 +797,81 @@ XUẤT TRỰC TIẾP PACKAGE`;
                   )}
                 </Box>
 
-                {/* Câu hỏi - Dropdown */}
-                <FormControl fullWidth>
-                  <InputLabel>❓ Câu hỏi phỏng vấn</InputLabel>
-                  <Select
-                    value={formData.question}
-                    onChange={handleInputChange('question')}
-                    label='❓ Câu hỏi phỏng vấn'
-                  >
-                    <MenuItem value='CN2: Xây dựng bộ câu hỏi mới'>
-                      CN2: Xây dựng bộ câu hỏi mới
-                    </MenuItem>
-                    <MenuItem value='CN1: Phỏng vấn cơ bản'>
-                      Option 2 (chưa có)
-                    </MenuItem>
-                    <MenuItem value='CN3: Đánh giá năng lực'>
-                      Option 3 (chưa có)
-                    </MenuItem>
-                    <MenuItem value='CN4: Kiểm tra kỹ thuật'>
-                      Option 4 (chưa có)
-                    </MenuItem>
-                    <MenuItem value='Khác'>Khác</MenuItem>
-                  </Select>
-                </FormControl>
+                {/* Câu hỏi và Case Number trên cùng 1 hàng */}
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <FormControl sx={{ flex: 1 }}>
+                    <InputLabel sx={{ fontSize: '0.85rem' }}>❓ Câu hỏi phỏng vấn</InputLabel>
+                    <Select
+                      value={formData.question}
+                      onChange={handleInputChange('question')}
+                      label='❓ Câu hỏi phỏng vấn'
+                      sx={{ fontSize: '0.85rem' }}
+                    >
+                      <MenuItem value='CN2: Xây dựng bộ câu hỏi mới' sx={{ fontSize: '0.85rem' }}>
+                        CN2: Xây dựng bộ câu hỏi mới
+                      </MenuItem>
+                      <MenuItem value='CN1: Phỏng vấn cơ bản' sx={{ fontSize: '0.85rem' }}>
+                        Option 2 (chưa có)
+                      </MenuItem>
+                      <MenuItem value='CN3: Đánh giá năng lực' sx={{ fontSize: '0.85rem' }}>
+                        Option 3 (chưa có)
+                      </MenuItem>
+                      <MenuItem value='CN4: Kiểm tra kỹ thuật' sx={{ fontSize: '0.85rem' }}>
+                        Option 4 (chưa có)
+                      </MenuItem>
+                      <MenuItem value='Khác' sx={{ fontSize: '0.85rem' }}>Khác</MenuItem>
+                    </Select>
+                  </FormControl>
 
-                {/* Case Number */}
-                <TextField
-                  fullWidth
-                  label='📋 Case Number'
-                  value={formData.caseNumber}
-                  onChange={handleInputChange('caseNumber')}
-                  placeholder='Nhập case number (VD: 2025F31234)'
-                />
-
-                {/* Ngày phỏng vấn */}
-                <LocalizationProvider
-                  dateAdapter={AdapterDateFns}
-                  adapterLocale={vi}
-                >
-                  <DatePicker
-                    label='📅 Ngày phỏng vấn'
-                    value={formData.interviewDate}
-                    onChange={handleDateChange}
-                    format='dd/MM/yyyy'
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        error: false,
-                      },
+                  <TextField
+                    sx={{
+                      flex: 1,
+                      '& .MuiInputLabel-root': { fontSize: '0.85rem' },
+                      '& .MuiInputBase-input': { fontSize: '0.85rem' }
                     }}
+                    label='📋 Case Number'
+                    value={formData.caseNumber}
+                    onChange={handleInputChange('caseNumber')}
+                    placeholder='Nhập case number (VD: 2025F31234)'
                   />
-                </LocalizationProvider>
+                </Box>
 
-                {/* Người đi cùng */}
-                <TextField
-                  fullWidth
-                  label='👥 Người đi cùng'
-                  value={formData.companion}
-                  onChange={handleInputChange('companion')}
-                  placeholder="Nhập tên người đi cùng hoặc 'Không có'"
-                />
+                {/* Ngày phỏng vấn và Người đi cùng trên cùng 1 hàng */}
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <LocalizationProvider
+                    dateAdapter={AdapterDateFns}
+                    adapterLocale={vi}
+                  >
+                    <DatePicker
+                      label='📅 Ngày phỏng vấn'
+                      value={formData.interviewDate}
+                      onChange={handleDateChange}
+                      format='dd/MM/yyyy'
+                      slotProps={{
+                        textField: {
+                          sx: {
+                            flex: 1,
+                            '& .MuiInputLabel-root': { fontSize: '0.85rem' },
+                            '& .MuiInputBase-input': { fontSize: '0.85rem' }
+                          },
+                          error: false,
+                        },
+                      }}
+                    />
+                  </LocalizationProvider>
+
+                  <TextField
+                    sx={{
+                      flex: 1,
+                      '& .MuiInputLabel-root': { fontSize: '0.85rem' },
+                      '& .MuiInputBase-input': { fontSize: '0.85rem' }
+                    }}
+                    label='👥 Người đi cùng'
+                    value={formData.companion}
+                    onChange={handleInputChange('companion')}
+                    placeholder="Nhập tên người đi cùng hoặc 'Không có'"
+                  />
+                </Box>
 
                 {/* Ghi chú */}
                 <TextField
@@ -869,6 +882,10 @@ XUẤT TRỰC TIẾP PACKAGE`;
                   placeholder='Nhập ghi chú bổ sung (nếu có)'
                   multiline
                   rows={3}
+                  sx={{
+                    '& .MuiInputLabel-root': { fontSize: '0.85rem' },
+                    '& .MuiInputBase-input': { fontSize: '0.85rem' }
+                  }}
                 />
               </Box>
             </Box>
@@ -1017,10 +1034,10 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     ) : null
                   }
                   sx={{
-                    py: 1.5,
+                    py: 1.2,
                     flex: 1,
                     fontWeight: 'bold',
-                    fontSize: '1.1rem'
+                    fontSize: '0.95rem'
                   }}
                 >
                   {isUploading
@@ -1039,9 +1056,10 @@ XUẤT TRỰC TIẾP PACKAGE`;
                   disabled={!latestChatGPTMessage || isExporting || isChatGPTStreaming || !isChatGPTComplete}
                   startIcon={<FileDownload />}
                   sx={{
-                    py: 1.5,
-                    minWidth: 140,
-                    fontWeight: 'bold'
+                    py: 1.2,
+                    minWidth: 120,
+                    fontWeight: 'bold',
+                    fontSize: '0.9rem'
                   }}
                 >
                   {isExporting
@@ -1075,7 +1093,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
               pb: 1,
               color: 'text.primary',
               fontWeight: 'bold',
-              fontSize: '1.2rem'
+              fontSize: '1rem'
             }}>
               {exportSuccess ? '🎉 Xuất file thành công!' : '📄 Đang xuất file...'}
             </DialogTitle>
@@ -1088,10 +1106,10 @@ XUẤT TRỰC TIẾP PACKAGE`;
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 3 }}>
                   <Box sx={{ width: '100%', mb: 3 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
                         🔄 Đang tạo Google Doc...
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                      <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.8rem' }}>
                         {Math.round(exportProgress)}%
                       </Typography>
                     </Box>
@@ -1110,10 +1128,10 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     />
                   </Box>
 
-                  <Typography variant="h6" color="text.primary" sx={{ mb: 1, fontWeight: 'bold' }}>
+                  <Typography variant="h6" color="text.primary" sx={{ mb: 1, fontWeight: 'bold', fontSize: '1rem' }}>
                     {exportProgress < 90 ? '⚙️ Đang xử lý dữ liệu...' : '📄 Đang tạo tài liệu...'}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" textAlign="center">
+                  <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ fontSize: '0.8rem' }}>
                     {exportProgress < 90
                       ? 'Vui lòng đợi trong giây lát, chúng tôi đang xử lý dữ liệu của bạn.'
                       : 'Đang tạo Google Doc, vui lòng đợi thêm chút nữa...'
@@ -1138,7 +1156,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     <FileDownload sx={{ fontSize: 32, color: 'success.main' }} />
                   </Box>
 
-                  <Typography variant="h6" color="success.main" sx={{ mb: 2, textAlign: 'center', fontWeight: 'bold' }}>
+                  <Typography variant="h6" color="success.main" sx={{ mb: 2, textAlign: 'center', fontWeight: 'bold', fontSize: '1rem' }}>
                     🎉 Google Doc đã được tạo thành công!
                   </Typography>
 
@@ -1152,22 +1170,22 @@ XUẤT TRỰC TIẾP PACKAGE`;
                         target="_blank"
                         rel="noopener noreferrer"
                         sx={{
-                          py: 1.5,
-                          px: 4,
+                          py: 1.2,
+                          px: 3,
                           borderRadius: 2,
                           textTransform: 'none',
-                          fontSize: '1rem',
+                          fontSize: '0.9rem',
                           fontWeight: 600,
                         }}
                       >
                         📄 Mở Google Doc
                       </Button>
-                      <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block', fontSize: '0.75rem' }}>
                         💡 Click vào nút trên để mở Google Doc trong tab mới
                       </Typography>
                     </Box>
                   ) : (
-                    <Typography variant="body2" color="text.secondary" textAlign="center">
+                    <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ fontSize: '0.8rem' }}>
                       ✅ File đã được xuất thành công!
                     </Typography>
                   )}
@@ -1186,8 +1204,9 @@ XUẤT TRỰC TIẾP PACKAGE`;
                 variant="outlined"
                 size="large"
                 sx={{
-                  minWidth: 120,
-                  fontWeight: 'bold'
+                  minWidth: 100,
+                  fontWeight: 'bold',
+                  fontSize: '0.85rem'
                 }}
               >
                 {exportSuccess ? '✅ Đóng' : '❌ Hủy'}

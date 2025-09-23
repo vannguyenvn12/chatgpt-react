@@ -259,6 +259,11 @@ export default function Form() {
     setExportSuccess(false);
     setExportedDocUrl(null);
     setExportProgress(0);
+
+    // Disconnect socket sau khi xuất file thành công
+    if (exportSuccess && connected) {
+      disconnectSocket();
+    }
   };
 
   const handleExportToGoogle = async () => {
@@ -1056,7 +1061,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                   size='large'
                   onClick={handleExportToGoogle}
                   disabled={!latestChatGPTMessage || isExporting || isChatGPTStreaming || !isChatGPTComplete}
-                  startIcon={<FileDownload />}
+                  // startIcon={<FileDownload />}
                   sx={{
                     py: 1.3,
                     minWidth: 130,
@@ -1162,6 +1167,10 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     🎉 Google Doc đã được tạo thành công!
                   </Typography>
 
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'center', fontSize: '0.9rem', px: 2 }}>
+                    💡 Tôi ngắt kết nối để cho người khác sử dụng. Nếu bạn có nhu cầu tạo câu hỏi tiếp thì nhấn nút kết nối lại nhé.
+                  </Typography>
+
                   {exportedDocUrl ? (
                     <Box sx={{ width: '100%', textAlign: 'center' }}>
                       <Button
@@ -1211,7 +1220,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                   fontSize: '0.95rem'
                 }}
               >
-                {exportSuccess ? '✅ Đóng' : '❌ Hủy'}
+                {exportSuccess ? '✅ OK' : '❌ Hủy'}
               </Button>
             </DialogActions>
           </Dialog>

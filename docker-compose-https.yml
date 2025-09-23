@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: .
+    container_name: chatgpt-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_URL=https://api-ai.vannguyenv12.com
+      - VITE_SOCKET_URL=https://api-ai.vannguyenv12.com
+
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: chatgpt-nginx-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-proxy.conf:/etc/nginx/conf.d/default.conf
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/logs:/var/log/letsencrypt
+    depends_on:
+      - frontend
+
+  certbot:
+    image: certbot/certbot
+    container_name: chatgpt-certbot
+    volumes:
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/logs:/var/log/letsencrypt
+    command: certonly --webroot --webroot-path=/var/www/certbot --email npnv.vn1@gmail.com --agree-tos --no-eff-email -d chat.icahg.com

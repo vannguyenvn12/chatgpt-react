@@ -485,7 +485,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     <strong>Bước 3:</strong> Nhấn "Yêu cầu bộ câu hỏi phỏng vấn" để nhận phản hồi
                   </Typography>
                   <Typography component="li" variant="body2" sx={{ mb: 2, color: 'text.primary' }}>
-                    <strong>Bước 4:</strong> Chờ AI trả lời
+                    <strong>Bước 4:</strong> Chờ hệ thống trả lời
                   </Typography>
                   <Typography component="li" variant="body2" sx={{ mb: 2, color: 'text.primary' }}>
                     <strong>Bước 5:</strong> Nhấn "Xuất File" để xuất file
@@ -500,13 +500,13 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     ✅ <strong>Đã kết nối:</strong> Bạn có thể bắt đầu sử dụng hệ thống
                   </Typography>
                   <Typography variant="body2" sx={{ mb: 2, color: 'text.primary' }}>
-                    📝 <strong>Điền form:</strong> Thông tin càng chi tiết, AI trả lời càng chính xác
+                    📝 <strong>Điền form:</strong> Thông tin càng chi tiết, hệ thống trả lời càng chính xác
                   </Typography>
                   <Typography variant="body2" sx={{ mb: 2, color: 'text.primary' }}>
                     📎 <strong>Upload file:</strong> Hỗ trợ PDF (tối đa 10MB)
                   </Typography>
                   <Typography variant="body2" sx={{ mb: 2, color: 'text.primary' }}>
-                    🤖 <strong>Gửi câu hỏi:</strong> Nhấn nút xanh để gửi câu hỏi cho AI
+                    🤖 <strong>Gửi câu hỏi:</strong> Nhấn nút xanh để gửi câu hỏi cho hệ thống
                   </Typography>
                 </Box>
               )}
@@ -946,7 +946,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                         color='info.dark'
                         sx={{ mb: 1, fontWeight: 600 }}
                       >
-                        Đang chờ phản hồi từ AI...
+                        Đang chờ phản hồi từ hệ thống...
                       </Typography>
                       <Typography
                         variant='caption'

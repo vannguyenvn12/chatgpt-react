@@ -57,6 +57,7 @@ export default function Form() {
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
   const [exportedDocUrl, setExportedDocUrl] = useState(null);
+  const [docxBase64, setDocxBase64] = useState(null);
   const [exportProgress, setExportProgress] = useState(0);
   const [isChatGPTStreaming, setIsChatGPTStreaming] = useState(false);
   const [isChatGPTComplete, setIsChatGPTComplete] = useState(false);
@@ -136,13 +137,20 @@ export default function Form() {
         // Reset form after receiving complete ChatGPT response
         if (!isStreaming) {
           setTimeout(() => {
-            setFormData({
-              fileAttachment: null,
-              question: 'CN2: Xây dựng bộ câu hỏi mới',
-              caseNumber: '',
-              interviewDate: null,
-              companion: [],
-              notes: '',
+            console.log('Resetting form, current caseNumber:', formData.caseNumber);
+            // Chỉ reset các field cần thiết, giữ lại caseNumber
+            setFormData(prev => {
+              console.log('Previous caseNumber:', prev.caseNumber);
+              const newFormData = {
+                ...prev,
+                fileAttachment: null,
+                question: 'CN2: Xây dựng bộ câu hỏi mới',
+                interviewDate: null,
+                companion: [],
+                notes: '',
+              };
+              console.log('New formData caseNumber:', newFormData.caseNumber);
+              return newFormData;
             });
             setIsSubmitting(false);
             setUploadError(null);
@@ -229,7 +237,41 @@ export default function Form() {
     setExportModalOpen(false);
     setExportSuccess(false);
     setExportedDocUrl(null);
+    setDocxBase64(null);
     setExportProgress(0);
+  };
+
+  const downloadDocxFile = () => {
+    if (!docxBase64) return;
+
+    try {
+      // Tạo blob từ base64
+      const byteCharacters = atob(docxBase64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+
+      // Tạo tên file từ caseNumber
+      const fileName = formData.caseNumber
+        ? `${formData.caseNumber} - Danh sách câu hỏi phỏng vấn.docx`
+        : `Danh sách câu hỏi phỏng vấn - ${new Date().toISOString().split('T')[0]}.docx`;
+
+      // Tạo URL và download
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      setUploadError('Lỗi tải file: ' + error.message);
+    }
   };
 
   const handleExportToGoogle = async () => {
@@ -258,7 +300,7 @@ export default function Form() {
 
     try {
       const response = await postText(
-        'https://script.google.com/macros/s/AKfycbyS3h4Ci958a33mz2tWopo02R1jwQvZaUQrezmT6AzsaqkCc0NkLm4CxPJU_o2lklZo/exec',
+        'https://script.google.com/macros/s/AKfycbzDemVciXikrPTQqDcNNF9hZEecOcpTE7WBDNMRu-xmB3QoxWiWM9Bh_LMuyLIbiUOW/exec',
         latestChatGPTMessage.text
       );
 
@@ -270,8 +312,19 @@ export default function Form() {
         const responseData = await response.text();
         try {
           const parsedData = JSON.parse(responseData);
-          if (parsedData.googleDocUrl) {
-            // Cập nhật state với Google Doc URL
+          if (parsedData.docx_base64) {
+            // Lưu docx_base64 để download
+            setDocxBase64(parsedData.docx_base64);
+            setExportSuccess(true);
+
+            // Disconnect socket ngay khi xuất file thành công
+            if (connected) {
+              setTimeout(() => {
+                disconnectSocket();
+              }, 1000); // Delay 1 giây để user thấy kết quả
+            }
+          } else if (parsedData.googleDocUrl) {
+            // Fallback cho Google Doc URL nếu có
             setLatestChatGPTMessage((prev) => ({
               ...prev,
               googleDocUrl: parsedData.googleDocUrl,
@@ -822,12 +875,32 @@ XUẤT TRỰC TIẾP PACKAGE`;
                   <TextField
                     sx={{
                       flex: 1,
-                      '& .MuiInputLabel-root': { fontSize: '0.95rem' },
-                      '& .MuiInputBase-input': { fontSize: '0.95rem' },
+                      '& .MuiInputLabel-root': {
+                        fontSize: '0.95rem',
+                        '&.Mui-focused': {
+                          color: 'text.primary'
+                        }
+                      },
+                      '& .MuiInputBase-input': {
+                        fontSize: '0.95rem',
+                        backgroundColor: 'transparent !important'
+                      },
                       '& .MuiInputBase-input::placeholder': {
                         opacity: 1,
                         color: 'text.secondary',
                         fontSize: '0.95rem'
+                      },
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: 'transparent !important',
+                        '&.Mui-focused': {
+                          backgroundColor: 'transparent !important'
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'primary.main'
+                        }
+                      },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'rgba(255, 255, 255, 0.23)'
                       }
                     }}
                     label='📋 Mã khách hàng'
@@ -979,7 +1052,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                       color={isChatGPTStreaming ? 'info.dark' : 'success.dark'}
                       sx={{ fontWeight: 600 }}
                     >
-                      Phản hồi từ AI:
+                      Phản hồi từ hệ thống:
                     </Typography>
                     {isChatGPTStreaming && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -1126,7 +1199,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                   <Box sx={{ width: '100%', mb: 3 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                       <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem' }}>
-                        🔄 Đang tạo Google Doc...
+                        🔄 Đang tạo file Word...
                       </Typography>
                       <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.9rem' }}>
                         {Math.round(exportProgress)}%
@@ -1148,12 +1221,12 @@ XUẤT TRỰC TIẾP PACKAGE`;
                   </Box>
 
                   <Typography variant="h6" color="text.primary" sx={{ mb: 1, fontWeight: 'bold', fontSize: '1.1rem' }}>
-                    {exportProgress < 90 ? '⚙️ Đang xử lý dữ liệu...' : '📄 Đang tạo tài liệu...'}
+                    {exportProgress < 90 ? '⚙️ Đang xử lý dữ liệu...' : '📄 Đang tạo file Word...'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ fontSize: '0.9rem' }}>
                     {exportProgress < 90
                       ? 'Vui lòng đợi trong giây lát, chúng tôi đang xử lý dữ liệu của bạn.'
-                      : 'Đang tạo Google Doc, vui lòng đợi thêm chút nữa...'
+                      : 'Đang tạo file Word, vui lòng đợi thêm chút nữa...'
                     }
                   </Typography>
                 </Box>
@@ -1176,14 +1249,36 @@ XUẤT TRỰC TIẾP PACKAGE`;
                   </Box>
 
                   <Typography variant="h6" color="success.main" sx={{ mb: 2, textAlign: 'center', fontWeight: 'bold', fontSize: '1.1rem' }}>
-                    🎉 Google Doc đã được tạo thành công!
+                    🎉 File Word đã được tạo thành công!
                   </Typography>
 
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'center', fontSize: '0.9rem', px: 2 }}>
-                    💡 Tôi sẽ tự động ngắt kết nối để cho người khác sử dụng. Nếu bạn có nhu cầu tạo câu hỏi tiếp thì nhấn nút "kết nối" lại nhé.
+                    💡 Hệ thống sẽ tự động ngắt kết nối để cho người khác sử dụng. Nếu bạn có nhu cầu tạo câu hỏi tiếp thì nhấn nút "kết nối" lại nhé.
                   </Typography>
 
-                  {exportedDocUrl ? (
+                  {docxBase64 ? (
+                    <Box sx={{ width: '100%', textAlign: 'center' }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="large"
+                        onClick={downloadDocxFile}
+                        sx={{
+                          py: 1.3,
+                          px: 4,
+                          borderRadius: 2,
+                          textTransform: 'none',
+                          fontSize: '1rem',
+                          fontWeight: 600,
+                        }}
+                      >
+                        📄 Tải Word
+                      </Button>
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block', fontSize: '0.85rem' }}>
+                        💡 Click vào nút trên để tải file Word về máy
+                      </Typography>
+                    </Box>
+                  ) : exportedDocUrl ? (
                     <Box sx={{ width: '100%', textAlign: 'center' }}>
                       <Button
                         variant="contained"

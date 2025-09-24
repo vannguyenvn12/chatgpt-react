@@ -1080,7 +1080,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     py: 1.3,
                     flex: 1,
                     fontWeight: 'bold',
-                    fontSize: '0.9rem'
+                    fontSize: '0.7rem'
                   }}
                 >
                   {isUploading
@@ -1102,7 +1102,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     py: 1.3,
                     minWidth: 130,
                     fontWeight: 'bold',
-                    fontSize: '0.9rem'
+                    fontSize: '0.7rem'
                   }}
                 >
                   {isExporting

@@ -180,8 +180,8 @@ export default function Form() {
     if (isWaitingForChatGPT) {
       timeout = setTimeout(() => {
         setIsWaitingForChatGPT(false);
-        setUploadError('Timeout: Không nhận được phản hồi từ ChatGPT trong 80 giây');
-      }, 80000);
+        setUploadError('Timeout: Không nhận được phản hồi từ ChatGPT trong 90 giây');
+      }, 90000);
     }
 
     return () => {

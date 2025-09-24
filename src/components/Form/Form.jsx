@@ -41,7 +41,7 @@ export default function Form() {
     question: 'CN2: Xây dựng bộ câu hỏi mới',
     caseNumber: '',
     interviewDate: null, // 7/3/2024
-    companion: '',
+    companion: [],
     notes: '',
   });
 
@@ -139,10 +139,10 @@ export default function Form() {
             setFormData({
               fileAttachment: null,
               question: 'CN2: Xây dựng bộ câu hỏi mới',
-              caseNumber: '2025F31234',
-              interviewDate: new Date(2024, 2, 7), // 7/3/2024
-              companion: 'Người bảo lãnh',
-              notes: 'Không có',
+              caseNumber: '',
+              interviewDate: null,
+              companion: [],
+              notes: '',
             });
             setIsSubmitting(false);
             setUploadError(null);
@@ -398,11 +398,15 @@ export default function Form() {
         }
 
         // Tạo prompt từ form data với file content
+        const companionText = Array.isArray(formData.companion)
+          ? formData.companion.join(', ')
+          : formData.companion;
+
         const prompt = `${fileUrl}
 Câu hỏi: ${formData.question}
 Case Number: ${formData.caseNumber}
 Ngày phỏng vấn: ${formatDateVN(formData.interviewDate)}
-Người đi cùng: ${formData.companion}
+Người đi cùng: ${companionText}
 Ghi chú: ${formData.notes}
 
 XUẤT TRỰC TIẾP PACKAGE`;
@@ -487,7 +491,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     <strong>Bước 5:</strong> Nhấn "Xuất File" để xuất file
                   </Typography>
                   <Typography component="li" variant="body2" sx={{ mb: 2, color: 'text.primary' }}>
-                    <strong>Bước 5:</strong> Ngắt kết nối sau khi dùng xong
+                    <strong>Bước 6:</strong> Ngắt kết nối sau khi dùng xong
                   </Typography>
                 </Box>
               ) : (
@@ -826,7 +830,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                         fontSize: '0.95rem'
                       }
                     }}
-                    label='📋 Case Number'
+                    label='📋 Mã khách hàng'
                     value={formData.caseNumber}
                     onChange={handleInputChange('caseNumber')}
                     placeholder='Mã hồ sơ lưu trữ tại ICAVIET (VD: 2025F31234)'
@@ -860,10 +864,12 @@ XUẤT TRỰC TIẾP PACKAGE`;
                   <FormControl sx={{ flex: 1 }}>
                     <InputLabel sx={{ fontSize: '0.95rem' }}>👥 Người đi cùng</InputLabel>
                     <Select
+                      multiple
                       value={formData.companion}
                       onChange={handleInputChange('companion')}
                       label='👥 Người đi cùng'
                       sx={{ fontSize: '0.95rem' }}
+                      renderValue={(selected) => selected.join(', ')}
                     >
                       <MenuItem value='Người bảo lãnh' sx={{ fontSize: '0.95rem' }}>
                         Người bảo lãnh

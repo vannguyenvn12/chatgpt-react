@@ -62,53 +62,24 @@ export default function Form() {
   const [isChatGPTComplete, setIsChatGPTComplete] = useState(false);
 
   const connectionChip = (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <Chip
-        label={
-          connecting
-            ? '🔄 Đang kết nối...'
-            : connected
-              ? '✅ Đã kết nối'
-              : isWaiting
-                ? '⏳ Đang chờ...'
-                : '❌ Chưa kết nối'
-        }
-        color={
-          connecting
-            ? 'warning'
-            : connected
-              ? 'success'
-              : isWaiting
-                ? 'warning'
-                : 'default'
-        }
-        size='small'
-        sx={{ fontWeight: 'bold' }}
-      />
-      {!connected && !isWaiting && (
-        <Button
-          variant="contained"
-          size="small"
-          onClick={connectSocket}
-          disabled={connecting}
-          startIcon={connecting ? <CircularProgress size={16} /> : null}
-          sx={{ fontWeight: 'bold', fontSize: '0.7rem' }}
-        >
-          {connecting ? '🔄 Đang kết nối...' : '🔌 Kết nối'}
-        </Button>
-      )}
-      {connected && (
-        <Button
-          variant="outlined"
-          size="small"
-          onClick={disconnectSocket}
-          color="warning"
-          sx={{ fontWeight: 'bold', fontSize: '0.7rem' }}
-        >
-          🔌 Ngắt kết nối
-        </Button>
-      )}
-    </Box>
+    <Button
+      variant={connected ? "outlined" : "contained"}
+      size="small"
+      onClick={connected ? disconnectSocket : connectSocket}
+      disabled={connecting || isWaiting}
+      startIcon={connecting ? <CircularProgress size={16} /> : null}
+      color={connected ? "warning" : "primary"}
+      sx={{ fontWeight: 'bold', fontSize: '0.7rem' }}
+    >
+      {connecting
+        ? '🔄 Đang kết nối...'
+        : connected
+          ? '🔌 Ngắt kết nối'
+          : isWaiting
+            ? '⏳ Đang chờ...'
+            : '🔌 Kết nối'
+      }
+    </Button>
   );
 
   const handleInputChange = (field) => (event) => {
@@ -507,7 +478,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     <strong>Bước 2:</strong> Điền đầy đủ thông tin phỏng vấn (có thể tải lên file PDF)
                   </Typography>
                   <Typography component="li" variant="body2" sx={{ mb: 2, color: 'text.primary' }}>
-                    <strong>Bước 3:</strong> Nhấn "Gửi câu hỏi cho AI" để nhận phản hồi
+                    <strong>Bước 3:</strong> Nhấn "Yêu cầu bộ câu hỏi phỏng vấn" để nhận phản hồi
                   </Typography>
                   <Typography component="li" variant="body2" sx={{ mb: 2, color: 'text.primary' }}>
                     <strong>Bước 4:</strong> Chờ AI trả lời
@@ -559,8 +530,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
           }}
         >
           <CardHeader
-            title='Support your immigration'
-            // subheader='Điền thông tin và gửi câu hỏi để nhận phản hồi từ AI'
+            title='Immigration interview prep'
             action={connectionChip}
             sx={{ pb: 0.5 }}
             titleTypographyProps={{ fontSize: '1rem' }}
@@ -1080,7 +1050,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     py: 1.3,
                     flex: 1,
                     fontWeight: 'bold',
-                    fontSize: '0.7rem'
+                    fontSize: '0.75rem'
                   }}
                 >
                   {isUploading
@@ -1102,7 +1072,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     py: 1.3,
                     minWidth: 130,
                     fontWeight: 'bold',
-                    fontSize: '0.7rem'
+                    fontSize: '0.75rem'
                   }}
                 >
                   {isExporting

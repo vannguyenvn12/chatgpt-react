@@ -833,7 +833,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     label='📋 Mã khách hàng'
                     value={formData.caseNumber}
                     onChange={handleInputChange('caseNumber')}
-                    placeholder='Mã hồ sơ lưu trữ tại ICAVIET (VD: 2025F31234)'
+                    placeholder='Mã hồ sơ lưu trữ tại ICAVIET (VD: 2025CR11234)'
                   />
                 </Box>
 

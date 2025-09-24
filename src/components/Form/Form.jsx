@@ -39,10 +39,10 @@ export default function Form() {
   const [formData, setFormData] = useState({
     fileAttachment: null,
     question: 'CN2: Xây dựng bộ câu hỏi mới',
-    caseNumber: '2025F31234',
-    interviewDate: new Date(2024, 2, 7), // 7/3/2024
-    companion: 'Không có',
-    notes: 'Không có',
+    caseNumber: '',
+    interviewDate: null, // 7/3/2024
+    companion: '',
+    notes: '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -92,7 +92,7 @@ export default function Form() {
           onClick={connectSocket}
           disabled={connecting}
           startIcon={connecting ? <CircularProgress size={16} /> : null}
-          sx={{ fontWeight: 'bold' }}
+          sx={{ fontWeight: 'bold', fontSize: '0.7rem' }}
         >
           {connecting ? '🔄 Đang kết nối...' : '🔌 Kết nối'}
         </Button>
@@ -103,7 +103,7 @@ export default function Form() {
           size="small"
           onClick={disconnectSocket}
           color="warning"
-          sx={{ fontWeight: 'bold' }}
+          sx={{ fontWeight: 'bold', fontSize: '0.7rem' }}
         >
           🔌 Ngắt kết nối
         </Button>
@@ -170,7 +170,7 @@ export default function Form() {
               question: 'CN2: Xây dựng bộ câu hỏi mới',
               caseNumber: '2025F31234',
               interviewDate: new Date(2024, 2, 7), // 7/3/2024
-              companion: 'Không có',
+              companion: 'Người bảo lãnh',
               notes: 'Không có',
             });
             setIsSubmitting(false);
@@ -559,11 +559,11 @@ XUẤT TRỰC TIẾP PACKAGE`;
           }}
         >
           <CardHeader
-            title='Hệ Thống Phỏng Vấn AI'
+            title='Support your immigration'
             // subheader='Điền thông tin và gửi câu hỏi để nhận phản hồi từ AI'
             action={connectionChip}
             sx={{ pb: 0.5 }}
-            titleTypographyProps={{ fontSize: '1.2rem' }}
+            titleTypographyProps={{ fontSize: '1rem' }}
           />
 
           {/* Socket Status Banner */}
@@ -664,9 +664,6 @@ XUẤT TRỰC TIẾP PACKAGE`;
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5, mt: 1, px: 1 }}>
                 {/* File đính kèm - Upload */}
                 <Box>
-                  <Typography variant='caption' color="text.secondary" sx={{ mb: 1, display: 'block', fontSize: '0.85rem' }}>
-                    💡 Tải lên file PDF chứa thông tin liên quan đến câu hỏi phỏng vấn
-                  </Typography>
                   {isUploading && (
                     <Box sx={{ mb: 2 }}>
                       <LinearProgress
@@ -804,7 +801,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                             color={isDragOver ? 'primary.main' : 'text.primary'}
                             sx={{ mb: 0.25, fontWeight: 500, fontSize: '0.9rem' }}
                           >
-                            {isDragOver ? '📁 Thả file vào đây' : '📁 Tải lên file'}
+                            {isDragOver ? '📁 Thả file vào đây' : '📁 Tải file PDF timeline'}
                           </Typography>
                           <Typography variant='caption' color='text.secondary' sx={{ fontSize: '0.8rem' }}>
                             Nhấn để chọn file hoặc kéo thả file vào đây
@@ -824,7 +821,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
 
                 {/* Câu hỏi và Case Number trên cùng 1 hàng */}
                 <Box sx={{ display: 'flex', gap: 2.5 }}>
-                  <FormControl sx={{ flex: 1 }}>
+                  <FormControl sx={{ flex: 1, display: 'none' }} >
                     <InputLabel sx={{ fontSize: '0.95rem' }}>❓ Câu hỏi phỏng vấn</InputLabel>
                     <Select
                       value={formData.question}
@@ -852,12 +849,17 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     sx={{
                       flex: 1,
                       '& .MuiInputLabel-root': { fontSize: '0.95rem' },
-                      '& .MuiInputBase-input': { fontSize: '0.95rem' }
+                      '& .MuiInputBase-input': { fontSize: '0.95rem' },
+                      '& .MuiInputBase-input::placeholder': {
+                        opacity: 1,
+                        color: 'text.secondary',
+                        fontSize: '0.95rem'
+                      }
                     }}
                     label='📋 Case Number'
                     value={formData.caseNumber}
                     onChange={handleInputChange('caseNumber')}
-                    placeholder='Nhập case number (VD: 2025F31234)'
+                    placeholder='Mã hồ sơ lưu trữ tại ICAVIET (VD: 2025F31234)'
                   />
                 </Box>
 
@@ -885,17 +887,28 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     />
                   </LocalizationProvider>
 
-                  <TextField
-                    sx={{
-                      flex: 1,
-                      '& .MuiInputLabel-root': { fontSize: '0.95rem' },
-                      '& .MuiInputBase-input': { fontSize: '0.95rem' }
-                    }}
-                    label='👥 Người đi cùng'
-                    value={formData.companion}
-                    onChange={handleInputChange('companion')}
-                    placeholder="Nhập tên người đi cùng hoặc 'Không có'"
-                  />
+                  <FormControl sx={{ flex: 1 }}>
+                    <InputLabel sx={{ fontSize: '0.95rem' }}>👥 Người đi cùng</InputLabel>
+                    <Select
+                      value={formData.companion}
+                      onChange={handleInputChange('companion')}
+                      label='👥 Người đi cùng'
+                      sx={{ fontSize: '0.95rem' }}
+                    >
+                      <MenuItem value='Người bảo lãnh' sx={{ fontSize: '0.95rem' }}>
+                        Người bảo lãnh
+                      </MenuItem>
+                      <MenuItem value='Con đi kèm' sx={{ fontSize: '0.95rem' }}>
+                        Con đi kèm
+                      </MenuItem>
+                      {/* <MenuItem value='Vợ/chồng đi kèm' sx={{ fontSize: '0.95rem' }}>
+                        Vợ/chồng đi kèm
+                      </MenuItem>
+                      <MenuItem value='Người giám hộ' sx={{ fontSize: '0.95rem' }}>
+                        Người giám hộ
+                      </MenuItem> */}
+                    </Select>
+                  </FormControl>
                 </Box>
 
                 {/* Ghi chú */}
@@ -904,12 +917,17 @@ XUẤT TRỰC TIẾP PACKAGE`;
                   label='📝 Ghi chú bổ sung'
                   value={formData.notes}
                   onChange={handleInputChange('notes')}
-                  placeholder='Nhập ghi chú bổ sung (nếu có)'
+                  placeholder='Tuổi của 2 người, lịch sử hôn nhân, lịch sử xin visa Mỹ, tiền án của NBL nếu có,...'
                   multiline
                   rows={3}
                   sx={{
                     '& .MuiInputLabel-root': { fontSize: '0.95rem' },
-                    '& .MuiInputBase-input': { fontSize: '0.95rem' }
+                    '& .MuiInputBase-input': { fontSize: '0.95rem' },
+                    '& .MuiInputBase-input::placeholder': {
+                      opacity: 1,
+                      color: 'text.secondary',
+                      fontSize: '0.95rem'
+                    }
                   }}
                 />
               </Box>
@@ -1062,7 +1080,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     py: 1.3,
                     flex: 1,
                     fontWeight: 'bold',
-                    fontSize: '1.05rem'
+                    fontSize: '0.9rem'
                   }}
                 >
                   {isUploading
@@ -1071,7 +1089,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                       ? '🚀 Đang gửi câu hỏi...'
                       : isWaitingForChatGPT
                         ? '⏳ Đang chờ AI trả lời...'
-                        : '🤖 Gửi câu hỏi cho AI'}
+                        : '🤖 Yêu cầu bộ câu hỏi phỏng vấn'}
                 </Button>
 
                 <Button
@@ -1084,7 +1102,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                     py: 1.3,
                     minWidth: 130,
                     fontWeight: 'bold',
-                    fontSize: '1rem'
+                    fontSize: '0.9rem'
                   }}
                 >
                   {isExporting

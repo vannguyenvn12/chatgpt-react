@@ -1174,7 +1174,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
                   </Typography>
 
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'center', fontSize: '0.9rem', px: 2 }}>
-                    💡 Tôi sẽ tự động ngắt kết nối sau 1 giây để cho người khác sử dụng. Nếu bạn có nhu cầu tạo câu hỏi tiếp thì nhấn nút kết nối lại nhé.
+                    💡 Tôi sẽ tự động ngắt kết nối để cho người khác sử dụng. Nếu bạn có nhu cầu tạo câu hỏi tiếp thì nhấn nút "kết nối" lại nhé.
                   </Typography>
 
                   {exportedDocUrl ? (

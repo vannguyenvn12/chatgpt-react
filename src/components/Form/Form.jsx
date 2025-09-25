@@ -587,7 +587,7 @@ XUẤT TRỰC TIẾP PACKAGE`;
           }}
         >
           <CardHeader
-            title='Spouse/Fiancé(e Interview Prep'
+            title='Spouse/Fiancé(e) Interview Prep'
             action={connectionChip}
             sx={{ pb: 0.5 }}
             titleTypographyProps={{ fontSize: '1rem' }}

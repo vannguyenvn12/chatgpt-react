@@ -57,7 +57,6 @@ export default function Form() {
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
   const [exportedDocUrl, setExportedDocUrl] = useState(null);
-  const [docxBase64, setDocxBase64] = useState(null);
   const [exportProgress, setExportProgress] = useState(0);
   const [isChatGPTStreaming, setIsChatGPTStreaming] = useState(false);
   const [isChatGPTComplete, setIsChatGPTComplete] = useState(false);
@@ -237,41 +236,7 @@ export default function Form() {
     setExportModalOpen(false);
     setExportSuccess(false);
     setExportedDocUrl(null);
-    setDocxBase64(null);
     setExportProgress(0);
-  };
-
-  const downloadDocxFile = () => {
-    if (!docxBase64) return;
-
-    try {
-      // Tạo blob từ base64
-      const byteCharacters = atob(docxBase64);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-
-      // Tạo tên file từ caseNumber
-      const fileName = formData.caseNumber
-        ? `${formData.caseNumber} - Danh sách câu hỏi phỏng vấn.docx`
-        : `Danh sách câu hỏi phỏng vấn - ${new Date().toISOString().split('T')[0]}.docx`;
-
-      // Tạo URL và download
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error downloading file:', error);
-      setUploadError('Lỗi tải file: ' + error.message);
-    }
   };
 
   const handleExportToGoogle = async () => {
@@ -299,75 +264,65 @@ export default function Form() {
     }, 200);
 
     try {
+      // Gửi text đến Google Apps Script
       const response = await postText(
-        'https://script.google.com/macros/s/AKfycbzDemVciXikrPTQqDcNNF9hZEecOcpTE7WBDNMRu-xmB3QoxWiWM9Bh_LMuyLIbiUOW/exec',
+        'https://script.google.com/macros/s/AKfycbwmnO4Bhc3ufYSY4gjjEZY6l6icaLYVVbKFt2ewI3VGJ8vebSl6ZKmvILbf_pyT60z1/exec',
         latestChatGPTMessage.text
       );
 
-      // Dừng fake progress và set 100% khi thành công
+      // Dừng fake progress
       clearInterval(progressInterval);
-      setExportProgress(100);
 
       if (response.ok) {
         const responseData = await response.text();
         try {
           const parsedData = JSON.parse(responseData);
-          if (parsedData.docx_base64) {
-            // Lưu docx_base64 để download
-            setDocxBase64(parsedData.docx_base64);
+
+          if (parsedData.error) {
+            // Apps Script trả về error
+            console.error('Google Apps Script error:', parsedData.error);
+            setUploadError('Lỗi tạo Google Doc: ' + parsedData.error);
+            setExportProgress(0);
+          } else if (parsedData.googleDocUrl) {
+            // Thành công - có Google Doc URL
+            setExportedDocUrl(parsedData.googleDocUrl);
+            setExportProgress(100);
             setExportSuccess(true);
 
-            // Disconnect socket ngay khi xuất file thành công
-            if (connected) {
-              setTimeout(() => {
-                disconnectSocket();
-              }, 1000); // Delay 1 giây để user thấy kết quả
-            }
-          } else if (parsedData.googleDocUrl) {
-            // Fallback cho Google Doc URL nếu có
+            // Update message với Google Doc URL
             setLatestChatGPTMessage((prev) => ({
               ...prev,
               googleDocUrl: parsedData.googleDocUrl,
             }));
-            setExportedDocUrl(parsedData.googleDocUrl);
-            setExportSuccess(true);
 
-            // Disconnect socket ngay khi xuất file thành công
+            // Disconnect socket sau 1s
             if (connected) {
               setTimeout(() => {
                 disconnectSocket();
-              }, 1000); // Delay 1 giây để user thấy kết quả
+              }, 1000);
             }
           } else {
-            setExportSuccess(true);
-
-            // Disconnect socket ngay khi xuất file thành công
-            if (connected) {
-              setTimeout(() => {
-                disconnectSocket();
-              }, 1000); // Delay 1 giây để user thấy kết quả
-            }
+            // Response không có expected fields
+            console.error('Unexpected response:', parsedData);
+            setUploadError('Phản hồi không hợp lệ từ Google Apps Script');
+            setExportProgress(0);
           }
         } catch (parseError) {
-          // Nếu không parse được JSON, coi như thành công
-          console.log('Response is not JSON, treating as success:', parseError);
-          setExportSuccess(true);
-
-          // Disconnect socket ngay khi xuất file thành công
-          if (connected) {
-            setTimeout(() => {
-              disconnectSocket();
-            }, 1000); // Delay 1 giây để user thấy kết quả
-          }
+          console.error('Parse error:', parseError);
+          setUploadError('Lỗi xử lý phản hồi từ Google Doc');
+          setExportProgress(0);
         }
       } else {
-        throw new Error(`Export failed: ${response.statusText}`);
+        // HTTP error
+        console.error('HTTP error:', response.status, response.statusText);
+        setUploadError(`Lỗi kết nối: ${response.status} ${response.statusText}`);
+        setExportProgress(0);
       }
     } catch (error) {
+      // Network error hoặc error khác
       console.error('Export error:', error);
-      clearInterval(progressInterval);
       setUploadError('Lỗi xuất file: ' + error.message);
-      setExportSuccess(false);
+      setExportProgress(0);
     } finally {
       setIsExporting(false);
     }
@@ -1249,36 +1204,14 @@ XUẤT TRỰC TIẾP PACKAGE`;
                   </Box>
 
                   <Typography variant="h6" color="success.main" sx={{ mb: 2, textAlign: 'center', fontWeight: 'bold', fontSize: '1.1rem' }}>
-                    🎉 File Word đã được tạo thành công!
+                    🎉 Google Doc đã được tạo thành công!
                   </Typography>
 
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'center', fontSize: '0.9rem', px: 2 }}>
                     💡 Hệ thống sẽ tự động ngắt kết nối để cho người khác sử dụng. Nếu bạn có nhu cầu tạo câu hỏi tiếp thì nhấn nút "kết nối" lại nhé.
                   </Typography>
 
-                  {docxBase64 ? (
-                    <Box sx={{ width: '100%', textAlign: 'center' }}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        size="large"
-                        onClick={downloadDocxFile}
-                        sx={{
-                          py: 1.3,
-                          px: 4,
-                          borderRadius: 2,
-                          textTransform: 'none',
-                          fontSize: '1rem',
-                          fontWeight: 600,
-                        }}
-                      >
-                        📄 Tải Word
-                      </Button>
-                      <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block', fontSize: '0.85rem' }}>
-                        💡 Click vào nút trên để tải file Word về máy
-                      </Typography>
-                    </Box>
-                  ) : exportedDocUrl ? (
+                  {exportedDocUrl ? (
                     <Box sx={{ width: '100%', textAlign: 'center' }}>
                       <Button
                         variant="contained"

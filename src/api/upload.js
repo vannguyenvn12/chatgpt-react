@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://api-ai.vannguyenv12.com/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export async function uploadToCloudinary(files) {
   console.log('check file', files);
